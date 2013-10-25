@@ -56,6 +56,12 @@ struct Vector {
 	{
 		scale(multiplier);
 	}
+	void operator += (const Vector& rhs)
+	{
+		x += rhs.x;
+		y += rhs.y;
+		z += rhs.z;
+	}
 	void operator /= (double divider)
 	{
 		scale(1.0 / divider);

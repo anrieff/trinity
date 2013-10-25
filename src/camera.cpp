@@ -17,3 +17,57 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
+
+#include "camera.h"
+#include "matrix.h"
+#include "util.h"
+#include "sdl.h"
+
+void Camera::beginFrame(void)
+{
+	double x = -aspect;
+	double y = +1;
+	
+	Vector corner = Vector(x, y, 1);
+	Vector center = Vector(0, 0, 1);
+	
+	double lenXY = (corner - center).length();
+	double wantedLength = tan(toRadians(fov / 2));
+	
+	double scaling = wantedLength / lenXY;
+	
+	x *= scaling;
+	y *= scaling;
+	
+	
+	this->upLeft = Vector(x, y, 1);
+	this->upRight = Vector(-x, y, 1);
+	this->downLeft = Vector(x, -y, 1);
+	
+	Matrix rotation = rotationAroundZ(toRadians(roll))
+	                * rotationAroundX(toRadians(pitch))
+	                * rotationAroundY(toRadians(yaw));
+	upLeft *= rotation;
+	upRight *= rotation;
+	downLeft *= rotation;
+	
+	upLeft += pos;
+	upRight += pos;
+	downLeft += pos;
+}
+
+Ray Camera::getScreenRay(double x, double y)
+{
+	Ray result; // A, B -     C = A + (B - A) * x
+	result.start = this->pos;
+	Vector target = upLeft + 
+		(upRight - upLeft) * (x / (double) frameWidth()) +
+		(downLeft - upLeft) * (y / (double) frameHeight());
+	
+	// A - camera; B = target
+	result.dir = target - this->pos;
+	
+	result.dir.normalize();
+	
+	return result;
+}

@@ -19,21 +19,73 @@
  ***************************************************************************/
 
 #include <SDL/SDL.h>
+#include <vector>
 #include "sdl.h"
 #include "matrix.h"
+#include "camera.h"
+#include "geometry.h"
+#include "shading.h"
+using namespace std;
 
 Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE]; //!< virtual framebuffer
+
+Camera* camera;
+
+vector<Geometry*> geometries;
+vector<Shader*> shaders;
+vector<Node*> nodes;
+
+
+Color raytrace(Ray ray)
+{
+	IntersectionData data;
+	for (int i = 0; i < (int) nodes.size(); i++)
+		if (nodes[i]->geom->intersect(ray, data))
+			return nodes[i]->shader->shade(ray, data);
+	
+	//
+	return Color(0, 0, 0);
+}
+
+
+void initializeScene(void)
+{
+	camera = new Camera;
+	camera->yaw = 0;
+	camera->pitch = -30;
+	camera->roll = 0;
+	camera->fov = 90;
+	camera->aspect = 4. / 3.0;
+	camera->pos = Vector(0,165,0);
+	
+	camera->beginFrame();
+	
+	lightPos = Vector(-30, 100, 250);
+	lightColor = Color(1, 1, 1);
+	lightPower = 50000;
+	
+	Plane* plane = new Plane(2);
+	geometries.push_back(plane);
+	
+	CheckerShader * checker = new CheckerShader(Color(0, 0, 0), Color(0, 0.5, 1), 5);
+	Node* floor = new Node(plane, checker);
+	shaders.push_back(checker);
+	nodes.push_back(floor);
+} 
 
 void renderScene(void)
 {
 	for (int y = 0; y < frameHeight(); y++)
-		for (int x = 0; x < frameWidth(); x++)
-			vfb[y][x] = Color(x / (float) frameWidth(), y / (float) frameHeight(), 0.0f);
+		for (int x = 0; x < frameWidth(); x++) {
+			Ray ray = camera->getScreenRay(x, y);
+			vfb[y][x] = raytrace(ray);
+		}
 }
 
 int main(int argc, char** argv)
 {
 	if (!initGraphics(RESX, RESY)) return -1;
+	initializeScene();
 	renderScene();
 	displayVFB(vfb);
 	waitForUserExit();
