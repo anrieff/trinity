@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="trinity" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/trinity" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/trinity" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="`sdl-config --cflags`" />
+			<Add option="-Wall" />
+		</Compiler>
+		<Linker>
+			<Add option="`sdl-config --libs`" />
+		</Linker>
+		<Unit filename="src/camera.cpp" />
+		<Unit filename="src/camera.h" />
+		<Unit filename="src/color.h" />
+		<Unit filename="src/constants.h" />
+		<Unit filename="src/geometry.cpp" />
+		<Unit filename="src/geometry.h" />
+		<Unit filename="src/main.cpp" />
+		<Unit filename="src/matrix.cpp" />
+		<Unit filename="src/matrix.h" />
+		<Unit filename="src/sdl.cpp" />
+		<Unit filename="src/sdl.h" />
+		<Unit filename="src/shading.cpp" />
+		<Unit filename="src/shading.h" />
+		<Unit filename="src/util.h" />
+		<Unit filename="src/vector.h" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
