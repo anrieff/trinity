@@ -23,6 +23,8 @@ How to set it up on your machine
                      
                      This will create a virtual drive L:, pointing to your F:\develop\SDK.
                      Of course, on your machine the latter path can be different.
+   2.3. Copy SDL-1.2.15\bin\SDL.dll in the root directory of the raytracer (i.e., where the *.cbp
+        files are).
 
 3. If you're using Linux:
    
