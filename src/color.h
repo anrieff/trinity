@@ -78,9 +78,9 @@ struct Color {
 	/// Accumulates some color to the current
 	void operator += (const Color& rhs)
 	{
-		r *= rhs.r;
-		g *= rhs.g;
-		b *= rhs.b;
+		r += rhs.r;
+		g += rhs.g;
+		b += rhs.b;
 	}
 	/// multiplies the color
 	void operator *= (float multiplier)
