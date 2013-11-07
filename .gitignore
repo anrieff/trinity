@@ -3,3 +3,5 @@ trinity.depend
 trinity.layout
 bin/
 obj/
+SDL.dll
+00*.patch
