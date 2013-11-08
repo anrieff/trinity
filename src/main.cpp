@@ -90,11 +90,11 @@ void initializeScene(void)
 	
 	camera->beginFrame();
 	
-	lightPos = Vector(-30, 700, 250);
+	lightPos = Vector(-30, 70, 250);
 	lightColor = Color(1, 1, 1);
-	lightPower = 350000;
+	lightPower = 35000;
 	
-	Plane* plane = new Plane(2);
+	Plane* plane = new Plane(-0.01);
 	geometries.push_back(plane);
 	
 	Checker* checker = new Checker(Color(0, 0, 0), Color(0, 0.5, 1), 5);
@@ -104,7 +104,7 @@ void initializeScene(void)
 	nodes.push_back(floor);
 	
 	for (int i = 0; i < 3; i++)
-		createNode(new Sphere(Vector(-100, 15, 256 - 50*i), 15), new Lambert(Color(1, 0, 0)));
+		createNode(new Cube(Vector(-100, 30, 256 - 50*i), 30), new Lambert(Color(1, 0, 0)));
 
 	for (int i = 0; i < 3; i++)
 		createNode(new Sphere(Vector(100, 15, 256 - 50*i), 15), new Phong(Color(0, 0, 1), 80, 1));

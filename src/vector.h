@@ -24,8 +24,12 @@
 #include <math.h>
 
 struct Vector {
-	double x, y, z;
+	union {
+		struct { double x, y, z; };
+		double components[3];
+	};
 	
+	/////////////////////////
 	Vector () {}
 	Vector(double _x, double _y, double _z) { set(_x, _y, _z); }
 	void set(double _x, double _y, double _z)
@@ -74,6 +78,15 @@ struct Vector {
 	void setLength(double newLength)
 	{
 		scale(newLength / length());
+	}
+	
+	inline double& operator[] (int index)
+	{
+		return components[index];
+	}
+	inline const double& operator[] (int index) const
+	{
+		return components[index];
 	}
 };
 
@@ -133,6 +146,31 @@ inline Vector reflect(const Vector& ray, const Vector& norm)
 	return result;
 }
 
+inline Vector faceforward(const Vector& ray, const Vector& norm)
+{
+	if (dot(ray, norm) < 0) return norm;
+	else return -norm;
+}
+
+inline Vector project(const Vector& v, int a, int b, int c)
+{
+	Vector result;
+	result[a] = v[0];
+	result[b] = v[1];
+	result[c] = v[2];
+	return result;
+}
+
+
+inline Vector unproject(const Vector& v, int a, int b, int c)
+{
+	Vector result;
+	result[0] = v[a];
+	result[1] = v[b];
+	result[2] = v[c];
+	return result;
+}
+
 struct Ray {
 	Vector start, dir;
 	Ray() {}
@@ -141,5 +179,10 @@ struct Ray {
 		dir = _dir;
 	}
 };
+
+inline Ray project(const Ray& v, int a, int b, int c)
+{
+	return Ray(project(v.start, a, b, c), project(v.dir, a, b, c));
+}
 
 #endif // __VECTOR3D_H__

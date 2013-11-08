@@ -67,3 +67,45 @@ bool Sphere::intersect(Ray ray, IntersectionData& info)
 	return true;
 }
 
+static bool intersectCubeSide(const Ray& ray, const Vector& center, double sideLength, IntersectionData& data)
+{
+	if (fabs(ray.dir.y) < 1e-9) return false;
+
+	double halfSide = sideLength * 0.5;
+	bool found = false;
+	for (int side = -1; side <= 1; side += 2) {
+		double yDiff = ray.dir.y;
+		double wantYDiff = ray.start.y - (center.y + side * halfSide);
+		double mult = wantYDiff / -yDiff;
+		if (mult < 0) continue;
+		if (mult > data.dist) continue;
+		Vector p = ray.start + ray.dir * mult;
+		if (p.x < center.x - halfSide ||
+			p.x > center.x + halfSide ||
+			p.z < center.z - halfSide ||
+			p.z > center.z + halfSide) continue;
+		data.p = ray.start + ray.dir * mult;
+		data.dist = mult;
+		data.normal = Vector(0, side, 0);
+		data.u = data.p.x - center.x;
+		data.v = data.p.z - center.z;
+		found = true;	
+	}
+	return found;
+}
+
+bool Cube::intersect(Ray ray, IntersectionData& data)
+{
+	bool found = intersectCubeSide(ray, center, side, data);
+	if (intersectCubeSide(project(ray, 1, 0, 2), project(center, 1, 0, 2), side, data)) {
+		found = true;
+		data.normal = unproject(data.normal, 1, 0, 2);
+		data.p = unproject(data.p, 1, 0, 2);
+	}
+	if (intersectCubeSide(project(ray, 0, 2, 1), project(center, 0, 2, 1), side, data)) {
+		found = true;
+		data.normal = unproject(data.normal, 0, 2, 1);
+		data.p = unproject(data.p, 0, 2, 1);
+	}
+	return found;
+}

@@ -50,16 +50,16 @@ Color Lambert::shade(Ray ray, const IntersectionData& data)
 {
 	Color diffuseColor = this->color;
 	
-	Vector N = data.normal;
+	Vector N = faceforward(ray.dir, data.normal);
 	if (texture) diffuseColor = texture->getTexColor(ray, data.u, data.v, N);
 	
 	Color lightContrib(0, 0, 0);
 	
-	if (testVisibility(data.p + data.normal * 1e-6, lightPos)) {
+	if (testVisibility(data.p + N * 1e-6, lightPos)) {
 		Vector lightDir = lightPos - data.p;
 		lightDir.normalize();
 		
-		double cosTheta = dot(lightDir, data.normal);
+		double cosTheta = dot(lightDir, N);
 		
 		lightContrib += lightColor * lightPower / (data.p - lightPos).lengthSqr() * cosTheta;
 	}
@@ -70,17 +70,17 @@ Color Phong::shade(Ray ray, const IntersectionData& data)
 {
 	Color diffuseColor = this->color;
 	
-	Vector N = data.normal;
+	Vector N = faceforward(ray.dir, data.normal);
 	if (texture) diffuseColor = texture->getTexColor(ray, data.u, data.v, N);
 	
 	Color lightContrib(0, 0, 0);
 	Color specular(0, 0, 0);
 	
-	if (testVisibility(data.p + data.normal * 1e-6, lightPos)) {
+	if (testVisibility(data.p + N * 1e-6, lightPos)) {
 		Vector lightDir = lightPos - data.p;
 		lightDir.normalize();
 		
-		double cosTheta = dot(lightDir, data.normal);
+		double cosTheta = dot(lightDir, N);
 		
 		Color baseLight = lightColor * lightPower / (data.p - lightPos).lengthSqr();
 		

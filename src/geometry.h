@@ -55,6 +55,46 @@ public:
 	bool intersect(Ray ray, IntersectionData& data);
 };
 
+class Cube: public Geometry {
+	Vector center;
+	double side;
+public:
+	Cube(const Vector& center, double side): center(center), side(side) {}
+
+	bool intersect(Ray ray, IntersectionData& data);	
+};
+
+class CsgOp: public Geometry {
+	Geometry *left, *right;
+public:
+	CsgOp(Geometry* left, Geometry* right) : left(left), right(right) {}
+	
+	bool intersect(Ray ray, IntersectionData& data);	
+	
+	virtual bool boolOp(bool inLeft, bool inRight) = 0;
+};
+
+class CsgUnion: public CsgOp {
+public:
+	CsgUnion(Geometry* left, Geometry* right): CsgOp(left, right) {}
+	
+	bool boolOp(bool inLeft, bool inRight) { return inLeft || inRight; }
+};
+
+class CsgDiff: public CsgOp {
+public:
+	CsgDiff(Geometry* left, Geometry* right): CsgOp(left, right) {}
+	
+	bool boolOp(bool inLeft, bool inRight) { return inLeft && !inRight; }
+};
+
+class CsgInter: public CsgOp {
+public:
+	CsgInter(Geometry* left, Geometry* right): CsgOp(left, right) {}
+	
+	bool boolOp(bool inLeft, bool inRight) { return inLeft && inRight; }
+};
+
 class Shader;
 
 class Node {
