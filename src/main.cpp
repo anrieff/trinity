@@ -90,9 +90,9 @@ void initializeScene(void)
 	
 	camera->beginFrame();
 	
-	lightPos = Vector(-30, 100, 250);
+	lightPos = Vector(-30, 700, 250);
 	lightColor = Color(1, 1, 1);
-	lightPower = 50000;
+	lightPower = 350000;
 	
 	Plane* plane = new Plane(2);
 	geometries.push_back(plane);
@@ -105,6 +105,9 @@ void initializeScene(void)
 	
 	for (int i = 0; i < 3; i++)
 		createNode(new Sphere(Vector(-100, 15, 256 - 50*i), 15), new Lambert(Color(1, 0, 0)));
+
+	for (int i = 0; i < 3; i++)
+		createNode(new Sphere(Vector(100, 15, 256 - 50*i), 15), new Phong(Color(0, 0, 1), 80, 1));
 } 
 
 void renderScene(void)

@@ -63,4 +63,15 @@ public:
 	Color shade(Ray ray, const IntersectionData& data);
 };
 
+class Phong: public Shader {
+	Texture* texture;
+	double exponent;
+	float strength;
+public:
+	Phong(const Color& diffuseColor, double exponent, float strength = 1, Texture* texture = NULL):
+		Shader(diffuseColor), texture(texture), exponent(exponent),
+		strength(strength) {}
+	Color shade(Ray ray, const IntersectionData& data);
+};
+
 #endif // __SHADING_H__
