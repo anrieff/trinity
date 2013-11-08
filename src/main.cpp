@@ -47,6 +47,13 @@ Color raytrace(Ray ray)
 	return Color(0, 0, 0);
 }
 
+void createNode(Geometry* geometry, Shader* shader)
+{
+	geometries.push_back(geometry);
+	shaders.push_back(shader);
+	Node* node = new Node(geometry, shader);
+	nodes.push_back(node);
+}
 
 void initializeScene(void)
 {
@@ -71,6 +78,8 @@ void initializeScene(void)
 	Node* floor = new Node(plane, checker);
 	shaders.push_back(checker);
 	nodes.push_back(floor);
+	
+	createNode(new Sphere(Vector(30, 30, 125), 50), new CheckerShader(Color(1, 0, 0), Color(1, 0.5, 0), 0.1));
 } 
 
 void renderScene(void)

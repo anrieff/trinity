@@ -46,6 +46,14 @@ public:
 	bool intersect(Ray ray, IntersectionData& data);
 };
 
+class Sphere: public Geometry {
+	Vector center;
+	double R;
+public:
+	Sphere(const Vector& center, double R): center(center), R(R) {}
+	
+	bool intersect(Ray ray, IntersectionData& data);
+};
 
 class Shader;
 

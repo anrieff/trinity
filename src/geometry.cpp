@@ -19,6 +19,7 @@
  ***************************************************************************/
 
 #include "geometry.h"
+#include "constants.h"
 #include "vector.h"
 
 
@@ -37,3 +38,29 @@ bool Plane::intersect(Ray ray, IntersectionData& data)
 		return true;
 	}
 }
+
+bool Sphere::intersect(Ray ray, IntersectionData& info)
+{
+	// compute the sphere intersection using a quadratic equation:
+	Vector H = ray.start - center;
+	double A = ray.dir.lengthSqr();
+	double B = 2 * dot(H, ray.dir);
+	double C = H.lengthSqr() - R*R;
+	double Dscr = B*B - 4*A*C;
+	if (Dscr < 0) return false; // no solutions to the quadratic equation - then we don't have an intersection.
+	double x1, x2;
+	x1 = (-B + sqrt(Dscr)) / (2*A);
+	x2 = (-B - sqrt(Dscr)) / (2*A);
+	double sol = x2; // get the closer of the two solutions...
+	if (sol < 0) sol = x1; // ... but if it's behind us, opt for the other one
+	if (sol < 0) return false; // ... still behind? Then the whole sphere is behind us - no intersection.
+	
+	info.dist = sol;
+	info.p = ray.start + ray.dir * sol;
+	info.normal = info.p - center; // generate the normal by getting the direction from the center to the ip
+	info.normal.normalize();
+	info.u = (PI + atan2(info.p.z - center.z, info.p.x - center.x))/(2*PI);
+	info.v = 1.0 - (PI/2 + asin((info.p.y - center.y)/R)) / PI;
+	return true;
+}
+
