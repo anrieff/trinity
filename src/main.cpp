@@ -52,6 +52,24 @@ Color raytrace(Ray ray)
 	return closestNode->shader->shade(ray, data);
 }
 
+bool testVisibility(const Vector& from, const Vector& to)
+{
+	Ray ray;
+	ray.start = from;
+	ray.dir = to - from;
+	ray.dir.normalize();
+	
+	IntersectionData temp;
+	temp.dist = (to - from).length();
+	
+	for (int i = 0; i < (int) nodes.size(); i++)
+		if (nodes[i]->geom->intersect(ray, temp))
+			return false;
+	
+	return true;
+}
+
+
 void createNode(Geometry* geometry, Shader* shader)
 {
 	geometries.push_back(geometry);

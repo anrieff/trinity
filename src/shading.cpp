@@ -24,6 +24,8 @@ Vector lightPos;
 Color lightColor;
 float lightPower;
 
+extern bool testVisibility(const Vector& from, const Vector& to);
+
 
 Shader::Shader(const Color& color)
 {
@@ -47,11 +49,15 @@ Color CheckerShader::shade(Ray ray, const IntersectionData& data)
 	int white = (x + y) % 2;
 	Color result = white ? color2 : color;
 	
-	result = result * lightColor * lightPower / (data.p - lightPos).lengthSqr();
-	Vector lightDir = lightPos - data.p;
-	lightDir.normalize();
+	Color lightContrib(0, 0, 0);
 	
-	double cosTheta = dot(lightDir, data.normal);
-	result = result * cosTheta;
-	return result;
+	if (testVisibility(data.p + data.normal * 1e-6, lightPos)) {
+		Vector lightDir = lightPos - data.p;
+		lightDir.normalize();
+		
+		double cosTheta = dot(lightDir, data.normal);
+		
+		lightContrib += lightColor * lightPower / (data.p - lightPos).lengthSqr() * cosTheta;
+	}
+	return result * lightContrib;
 }
