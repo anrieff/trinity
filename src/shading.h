@@ -27,6 +27,7 @@
 extern Vector lightPos;
 extern Color lightColor;
 extern float lightPower;
+extern Color ambientLight;
 
 
 class Shader {

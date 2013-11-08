@@ -22,12 +22,15 @@
 
 #include "vector.h"
 
+class Geometry;
 struct IntersectionData {
 	Vector p;
 	Vector normal;
 	double dist;
 	
 	double u, v;
+	
+	Geometry* g;
 };
 
 

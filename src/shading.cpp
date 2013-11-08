@@ -23,6 +23,7 @@
 Vector lightPos;
 Color lightColor;
 float lightPower;
+Color ambientLight;
 
 extern bool testVisibility(const Vector& from, const Vector& to);
 
@@ -53,7 +54,7 @@ Color Lambert::shade(Ray ray, const IntersectionData& data)
 	Vector N = faceforward(ray.dir, data.normal);
 	if (texture) diffuseColor = texture->getTexColor(ray, data.u, data.v, N);
 	
-	Color lightContrib(0, 0, 0);
+	Color lightContrib = ambientLight;
 	
 	if (testVisibility(data.p + N * 1e-6, lightPos)) {
 		Vector lightDir = lightPos - data.p;
@@ -73,7 +74,7 @@ Color Phong::shade(Ray ray, const IntersectionData& data)
 	Vector N = faceforward(ray.dir, data.normal);
 	if (texture) diffuseColor = texture->getTexColor(ray, data.u, data.v, N);
 	
-	Color lightContrib(0, 0, 0);
+	Color lightContrib = ambientLight;
 	Color specular(0, 0, 0);
 	
 	if (testVisibility(data.p + N * 1e-6, lightPos)) {

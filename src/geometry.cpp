@@ -21,6 +21,9 @@
 #include "geometry.h"
 #include "constants.h"
 #include "vector.h"
+#include <vector>
+#include <algorithm>
+using std::vector;
 
 
 bool Plane::intersect(Ray ray, IntersectionData& data)
@@ -36,6 +39,7 @@ bool Plane::intersect(Ray ray, IntersectionData& data)
 		data.normal = Vector(0, 1, 0);
 		data.u = data.p.x;
 		data.v = data.p.z;
+		data.g = this;
 		return true;
 	}
 }
@@ -64,6 +68,7 @@ bool Sphere::intersect(Ray ray, IntersectionData& info)
 	info.normal.normalize();
 	info.u = (PI + atan2(info.p.z - center.z, info.p.x - center.x))/(2*PI);
 	info.v = 1.0 - (PI/2 + asin((info.p.y - center.y)/R)) / PI;
+	info.g = this;
 	return true;
 }
 
@@ -107,5 +112,57 @@ bool Cube::intersect(Ray ray, IntersectionData& data)
 		data.normal = unproject(data.normal, 0, 2, 1);
 		data.p = unproject(data.p, 0, 2, 1);
 	}
+	if (found) data.g = this;
 	return found;
+}
+
+static void findAllIntersections(Geometry* geom, Ray ray, vector<IntersectionData>& l, double maxDist)
+{
+	double currentLength = 0;
+	while (1) {
+		IntersectionData temp;
+		temp.dist = maxDist;
+		//
+		if (!geom->intersect(ray, temp)) break;
+		//
+		maxDist -= temp.dist;
+		temp.dist += currentLength;
+		currentLength = temp.dist;
+		l.push_back(temp);
+		ray.start = temp.p + ray.dir * 1e-6;
+	}
+}
+
+bool CsgOp::intersect(Ray ray, IntersectionData& data)
+{
+	vector<IntersectionData> L, R, all;
+	
+	findAllIntersections(left, ray, L, data.dist);
+	findAllIntersections(right, ray, R, data.dist);
+	
+	all = L;
+	for (int i = 0; i < (int) R.size(); i++)
+		all.push_back(R[i]);
+	
+	std::sort(all.begin(), all.end(),
+		[] (const IntersectionData& a, const IntersectionData& b) { return a.dist < b.dist; });
+	
+	bool inL, inR;
+	inL = L.size() % 2 == 1;
+	inR = R.size() % 2 == 1;
+	
+	for (int i = 0; i < (int) all.size(); i++) {
+		IntersectionData& current = all[i];
+		
+		if (current.g == left)
+			inL = !inL;
+		else
+			inR = !inR;
+		
+		if (boolOp(inL, inR)) {
+			data = current;
+			return true;
+		}
+	}
+	return false;
 }

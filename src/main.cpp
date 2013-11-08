@@ -90,9 +90,10 @@ void initializeScene(void)
 	
 	camera->beginFrame();
 	
-	lightPos = Vector(-30, 70, 250);
+	lightPos = Vector(-90, 70, 350);
 	lightColor = Color(1, 1, 1);
-	lightPower = 35000;
+	lightPower = 350000;
+	ambientLight = Color(0.25, 0.25, 0.25);
 	
 	Plane* plane = new Plane(-0.01);
 	geometries.push_back(plane);
@@ -103,8 +104,17 @@ void initializeScene(void)
 	shaders.push_back(lambert);
 	nodes.push_back(floor);
 	
-	for (int i = 0; i < 3; i++)
-		createNode(new Cube(Vector(-100, 30, 256 - 50*i), 30), new Lambert(Color(1, 0, 0)));
+	
+	
+//	for (int i = 0; i < 3; i++)
+//		createNode(new Cube(Vector(-100, 30, 256 - 50*i), 30), new Lambert(Color(1, 0, 0)));
+
+	CsgOp* diff = new CsgDiff(
+		new Cube(Vector(-100, 60, 200), 100),
+		new Sphere(Vector(-100, 60, 200), 70)
+	);
+	
+	createNode(diff, new Phong(Color(1,1, 0), 60, 1));
 
 	for (int i = 0; i < 3; i++)
 		createNode(new Sphere(Vector(100, 15, 256 - 50*i), 15), new Phong(Color(0, 0, 1), 80, 1));
