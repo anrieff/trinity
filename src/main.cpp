@@ -90,20 +90,26 @@ void initializeScene(void)
 	
 	camera->beginFrame();
 	
-	lightPos = Vector(-90, 70, 350);
+	lightPos = Vector(-90, 700, 350);
 	lightColor = Color(1, 1, 1);
 	lightPower = 350000;
-	ambientLight = Color(0.25, 0.25, 0.25);
+	ambientLight = Color(0.12, 0.12, 0.12);
 	
 	Plane* plane = new Plane(-0.01);
 	geometries.push_back(plane);
 	
 	Texture* texture = new BitmapTexture("data/floor.bmp", 0.005);
-	Lambert* lambert = new Lambert(Color(1, 1, 1), texture);
+	Checker* checker = new Checker(Color(1, 1, 1), Color(0, 0, 0), 35);
+	Lambert* lambert = new Lambert(Color(1, 1, 1), checker);
 	Node* floor = new Node(plane, lambert);
 	shaders.push_back(lambert);
 	nodes.push_back(floor);
+
+	Texture* world = new BitmapTexture("data/world.bmp", 2);
 	
+	Sphere* sphere = new Sphere(Vector(100, 50, 320), 50);
+	Lambert* sphereshader = new Lambert(Color(1,1,1), world);
+	createNode(sphere, sphereshader);
 	
 	
 //	for (int i = 0; i < 3; i++)
