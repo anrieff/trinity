@@ -98,8 +98,8 @@ void initializeScene(void)
 	Plane* plane = new Plane(-0.01);
 	geometries.push_back(plane);
 	
-	Checker* checker = new Checker(Color(0, 0, 0), Color(0, 0.5, 1), 5);
-	Lambert* lambert = new Lambert(Color(1, 1, 1), checker);
+	Texture* texture = new BitmapTexture("data/floor.bmp", 0.005);
+	Lambert* lambert = new Lambert(Color(1, 1, 1), texture);
 	Node* floor = new Node(plane, lambert);
 	shaders.push_back(lambert);
 	nodes.push_back(floor);

@@ -95,3 +95,19 @@ Color Phong::shade(Ray ray, const IntersectionData& data)
 	}
 	return diffuseColor * lightContrib + specular;
 }
+
+BitmapTexture::BitmapTexture(const char* fileName, double scaling)
+{
+	bmp.loadBMP(fileName);
+	this->scaling = scaling;
+}
+
+Color BitmapTexture::getTexColor(const Ray& ray, double u, double v, Vector& normal)
+{
+	u *= scaling;
+	v *= scaling;
+	u = u - floor(u);
+	v = v - floor(v);
+	
+	return bmp.getPixel(u * bmp.getWidth(), v * bmp.getHeight());
+}

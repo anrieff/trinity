@@ -23,6 +23,7 @@
 #include "color.h"
 #include "vector.h"
 #include "geometry.h"
+#include "bitmap.h"
 
 extern Vector lightPos;
 extern Color lightColor;
@@ -54,6 +55,15 @@ public:
 	Checker(const Color& color1, const Color& color2, double size = 1):
 		color1(color1), color2(color2), size(size) {}
 	Color getTexColor(const Ray& ray, double u, double v, Vector& normal);
+};
+
+class BitmapTexture: public Texture {
+	Bitmap bmp;
+	double scaling;
+public:
+	BitmapTexture(const char* fileName, double scaling = 1);
+	Color getTexColor(const Ray& ray, double u, double v, Vector& normal);
+	
 };
 
 class Lambert: public Shader {
