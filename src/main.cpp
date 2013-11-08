@@ -97,14 +97,14 @@ void initializeScene(void)
 	Plane* plane = new Plane(2);
 	geometries.push_back(plane);
 	
-
-	CheckerShader * checker = new CheckerShader(Color(0, 0, 0), Color(0, 0.5, 1), 5);
-	Node* floor = new Node(plane, checker);
-	shaders.push_back(checker);
+	Checker* checker = new Checker(Color(0, 0, 0), Color(0, 0.5, 1), 5);
+	Lambert* lambert = new Lambert(Color(1, 1, 1), checker);
+	Node* floor = new Node(plane, lambert);
+	shaders.push_back(lambert);
 	nodes.push_back(floor);
 	
 	for (int i = 0; i < 3; i++)
-		createNode(new Sphere(Vector(-100, 15, 256 - 50*i), 15), new CheckerShader(Color(1, 0, 0), Color(1, 0.5, 0), 0.1));
+		createNode(new Sphere(Vector(-100, 15, 256 - 50*i), 15), new Lambert(Color(1, 0, 0)));
 } 
 
 void renderScene(void)

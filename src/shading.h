@@ -39,11 +39,27 @@ public:
 	virtual Color shade(Ray ray, const IntersectionData& data) = 0;
 };
 
-class CheckerShader: public Shader {
-	Color color2;
+class Texture {
+public:
+	virtual ~Texture() {}
+	
+	virtual Color getTexColor(const Ray& ray, double u, double v, Vector& normal) = 0;
+};
+
+class Checker: public Texture {
+	Color color1, color2;
 	double size;
 public:
-	CheckerShader(const Color& c1, const Color& c2, double size = 1);
+	Checker(const Color& color1, const Color& color2, double size = 1):
+		color1(color1), color2(color2), size(size) {}
+	Color getTexColor(const Ray& ray, double u, double v, Vector& normal);
+};
+
+class Lambert: public Shader {
+	Texture* texture;
+public:
+	Lambert(const Color& diffuseColor, Texture* texture = NULL):
+		Shader(diffuseColor), texture(texture) {}
 	Color shade(Ray ray, const IntersectionData& data);
 };
 
