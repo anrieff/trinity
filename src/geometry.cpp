@@ -30,6 +30,7 @@ bool Plane::intersect(Ray ray, IntersectionData& data)
 		double yDiff = ray.dir.y;
 		double wantYDiff = ray.start.y - this->y;
 		double mult = wantYDiff / -yDiff;
+		if (mult > data.dist) return false;
 		data.p = ray.start + ray.dir * mult;
 		data.dist = mult;
 		data.normal = Vector(0, 1, 0);
@@ -54,6 +55,8 @@ bool Sphere::intersect(Ray ray, IntersectionData& info)
 	double sol = x2; // get the closer of the two solutions...
 	if (sol < 0) sol = x1; // ... but if it's behind us, opt for the other one
 	if (sol < 0) return false; // ... still behind? Then the whole sphere is behind us - no intersection.
+	
+	if (sol > info.dist) return false;
 	
 	info.dist = sol;
 	info.p = ray.start + ray.dir * sol;

@@ -39,12 +39,17 @@ vector<Node*> nodes;
 Color raytrace(Ray ray)
 {
 	IntersectionData data;
+	Node* closestNode = NULL;
+	
+	data.dist = 1e99;
+	
 	for (int i = 0; i < (int) nodes.size(); i++)
 		if (nodes[i]->geom->intersect(ray, data))
-			return nodes[i]->shader->shade(ray, data);
+			closestNode = nodes[i];
+
+	if (!closestNode) return Color(0, 0, 0);
 	
-	//
-	return Color(0, 0, 0);
+	return closestNode->shader->shade(ray, data);
 }
 
 void createNode(Geometry* geometry, Shader* shader)
@@ -74,12 +79,14 @@ void initializeScene(void)
 	Plane* plane = new Plane(2);
 	geometries.push_back(plane);
 	
+
 	CheckerShader * checker = new CheckerShader(Color(0, 0, 0), Color(0, 0.5, 1), 5);
 	Node* floor = new Node(plane, checker);
 	shaders.push_back(checker);
 	nodes.push_back(floor);
 	
-	createNode(new Sphere(Vector(30, 30, 125), 50), new CheckerShader(Color(1, 0, 0), Color(1, 0.5, 0), 0.1));
+	for (int i = 0; i < 3; i++)
+		createNode(new Sphere(Vector(-100, 15, 256 - 50*i), 15), new CheckerShader(Color(1, 0, 0), Color(1, 0.5, 0), 0.1));
 } 
 
 void renderScene(void)
