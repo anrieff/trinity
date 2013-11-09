@@ -148,11 +148,14 @@ void renderScene(void)
 	
 	int W = frameWidth();
 	int H = frameHeight();
+	
+	// first pass: shoot just one ray per pixel
 	for (int y = 0; y < H; y++)
 		for (int x = 0; x < W; x++)
 			vfb[y][x] = raytrace(camera->getScreenRay(x, y));
 
-	for (int y = 0; y < H; y++)
+	// second pass: find pixels, that need anti-aliasing, by analyzing their neighbours
+	for (int y = 0; y < H; y++) {
 		for (int x = 0; x < W; x++) {
 			Color neighs[5];
 			neighs[0] = vfb[y][x];
@@ -169,27 +172,44 @@ void renderScene(void)
 				average += neighs[i];
 			average /= 5.0f;
 			
-			for (int i = 0; i < 5; i++)
+			for (int i = 0; i < 5; i++) {
 				if (tooDifferent(neighs[i], average)) {
 					needsAA[y][x] = true;
 					break;
 				}
+			}
 		}
+	}
 
-	for (int y = 0; y < H; y++)
-		for (int x = 0; x < W; x++)
-			if (needsAA[y][x])
-				vfb[y][x] = Color(1, 0, 0);
-
-	/*
-	for (int y = 0; y < frameHeight(); y++)
-		for (int x = 0; x < frameWidth(); x++) {
-			Color result(0, 0, 0);
-			for (int i = 0; i < 5; i++)
-				result += raytrace(camera->getScreenRay(x + kernel[i][0], y + kernel[i][1]));
-			vfb[y][x] = result / 5.0f;
+	bool previewAA = false; // change to true to make it just display which pixels are selected for anti-aliasing
+	
+	if (previewAA) {
+		for (int y = 0; y < H; y++)
+			for (int x = 0; x < W; x++)
+				if (needsAA[y][x])
+					vfb[y][x] = Color(1, 0, 0);
+	} else {
+		/* 
+		 * A third pass, shooting additional rays for pixels that need them.
+		 * Note that all pixels already are sampled with a ray at offset (0, 0),
+		 * which coincides with sample #0 of our antialiasing kernel. So, instead
+		 * of shooting five rays (the kernel size), we can just shoot the remaining
+		 * four rays, adding with what we currently have in the pixel, and average
+		 * after that.
+		 */
+		for (int y = 0; y < frameHeight(); y++) {
+			for (int x = 0; x < frameWidth(); x++) { 
+				if (needsAA[y][x]) {
+					Color result = vfb[y][x]; // current result, identical to what we will
+					                          // get if we shoot a new ray with i == 0 in the
+					                          // following code:
+					for (int i = 1; i < 5; i++)
+						result += raytrace(camera->getScreenRay(x + kernel[i][0], y + kernel[i][1]));
+					vfb[y][x] = result / 5.0f;
+				}
+			}
 		}
-	*/
+	}
 }
 
 int main(int argc, char** argv)
@@ -199,7 +219,7 @@ int main(int argc, char** argv)
 	Uint32 startTicks = SDL_GetTicks();
 	renderScene();
 	Uint32 renderTime = SDL_GetTicks() - startTicks;
-	printf("Render time: %.2lf seconds.\n", renderTime/1000.0);
+	printf("Render time: %.2lf seconds.\n", renderTime / 1000.0);
 	displayVFB(vfb);
 	waitForUserExit();
 	closeGraphics();
