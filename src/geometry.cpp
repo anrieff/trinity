@@ -116,16 +116,15 @@ bool Cube::intersect(Ray ray, IntersectionData& data)
 	return found;
 }
 
-static void findAllIntersections(Geometry* geom, Ray ray, vector<IntersectionData>& l, double maxDist)
+static void findAllIntersections(Geometry* geom, Ray ray, vector<IntersectionData>& l)
 {
 	double currentLength = 0;
 	while (1) {
 		IntersectionData temp;
-		temp.dist = maxDist;
+		temp.dist = 1e99;
 		//
 		if (!geom->intersect(ray, temp)) break;
 		//
-		maxDist -= temp.dist;
 		temp.dist += currentLength;
 		currentLength = temp.dist;
 		l.push_back(temp);
@@ -137,8 +136,8 @@ bool CsgOp::intersect(Ray ray, IntersectionData& data)
 {
 	vector<IntersectionData> L, R, all;
 	
-	findAllIntersections(left, ray, L, data.dist);
-	findAllIntersections(right, ray, R, data.dist);
+	findAllIntersections(left, ray, L);
+	findAllIntersections(right, ray, R);
 	
 	all = L;
 	for (int i = 0; i < (int) R.size(); i++)
@@ -160,6 +159,7 @@ bool CsgOp::intersect(Ray ray, IntersectionData& data)
 			inR = !inR;
 		
 		if (boolOp(inL, inR)) {
+			if (current.dist > data.dist) return false;
 			data = current;
 			return true;
 		}

@@ -20,6 +20,7 @@
 
 #include <SDL/SDL.h>
 #include <vector>
+#include <iostream>
 #include "sdl.h"
 #include "matrix.h"
 #include "camera.h"
@@ -40,7 +41,10 @@ Color raytrace(Ray ray)
 {
 	IntersectionData data;
 	Node* closestNode = NULL;
-	
+
+	if (ray.debug)
+		cout << "  Raytrace[start = " << ray.start << ", dir = " << ray.dir << "]\n";
+
 	data.dist = 1e99;
 	
 	for (int i = 0; i < (int) nodes.size(); i++)
@@ -48,6 +52,13 @@ Color raytrace(Ray ray)
 			closestNode = nodes[i];
 
 	if (!closestNode) return Color(0, 0, 0);
+	
+	if (ray.debug) {
+		cout << "    Hit " << closestNode->geom->getName() << " at distance " << fixed << setprecision(2) << data.dist << endl;
+		cout << "      Intersection point: " << data.p << endl;
+		cout << "      Normal:             " << data.normal << endl;
+		cout << "      UV coods:           " << data.u << ", " << data.v << endl;
+	}
 	
 	return closestNode->shader->shade(ray, data);
 }
@@ -98,7 +109,7 @@ void initializeScene(void)
 	Plane* plane = new Plane(-0.01);
 	geometries.push_back(plane);
 	
-	Texture* texture = new BitmapTexture("data/floor.bmp", 0.005);
+//	Texture* texture = new BitmapTexture("data/floor.bmp", 0.005);
 	Checker* checker = new Checker(Color(1, 1, 1), Color(0, 0, 0), 35);
 	Lambert* lambert = new Lambert(Color(1, 1, 1), checker);
 	Node* floor = new Node(plane, lambert);
@@ -210,6 +221,16 @@ void renderScene(void)
 			}
 		}
 	}
+}
+
+void handleMouse(SDL_MouseButtonEvent *mev)
+{
+	if (mev->button != 1) return; // only consider the left mouse button
+	printf("Mouse click from (%d, %d)\n", (int) mev->x, (int) mev->y);
+	Ray ray = camera->getScreenRay(mev->x, mev->y);
+	ray.debug = true;
+	raytrace(ray);
+	printf("Raytracing completed!\n");
 }
 
 int main(int argc, char** argv)

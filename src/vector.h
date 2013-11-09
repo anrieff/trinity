@@ -22,6 +22,8 @@
 #define __VECTOR3D_H__
 
 #include <math.h>
+#include <ostream>
+#include <iomanip>
 
 struct Vector {
 	union {
@@ -173,16 +175,27 @@ inline Vector unproject(const Vector& v, int a, int b, int c)
 
 struct Ray {
 	Vector start, dir;
-	Ray() {}
+	bool debug;
+	Ray() {
+		debug = false;
+	}
 	Ray(const Vector& _start, const Vector& _dir) {
 		start = _start;
 		dir = _dir;
+		debug = false;
 	}
 };
 
 inline Ray project(const Ray& v, int a, int b, int c)
 {
 	return Ray(project(v.start, a, b, c), project(v.dir, a, b, c));
+}
+
+// iostream Vector print routine:
+inline std::ostream& operator << (std::ostream& os, const Vector& vec)
+{
+	os << "(" << std::fixed << std::setprecision(3) << vec.x << ", " << vec.y << ", " << vec.z << ")";
+	return os;
 }
 
 #endif // __VECTOR3D_H__

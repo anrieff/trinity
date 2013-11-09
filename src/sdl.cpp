@@ -78,6 +78,12 @@ void waitForUserExit(void)
 							break;
 					}
 				}
+				case SDL_MOUSEBUTTONUP:
+				{
+					extern void handleMouse(SDL_MouseButtonEvent *mev);
+					handleMouse(&ev.button);
+					break;
+				}
 				default:
 					break;
 			}
