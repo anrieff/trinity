@@ -124,22 +124,80 @@ void initializeScene(void)
 
 	for (int i = 0; i < 3; i++)
 		createNode(new Sphere(Vector(100, 15, 256 - 50*i), 15), new Phong(Color(0, 0, 1), 80, 1));
-} 
+}
+
+bool needsAA[VFB_MAX_SIZE][VFB_MAX_SIZE];
+
+inline bool tooDifferent(const Color& a, const Color& b)
+{
+	const float THRESHOLD = 0.6;
+	return (fabs(a.r - b.r) > THRESHOLD ||
+		     fabs(a.g - b.g) > THRESHOLD ||
+		     fabs(a.b - b.b) > THRESHOLD);
+}
 
 void renderScene(void)
 {
+	const double kernel[5][2] = {
+		{ 0, 0 },
+		{ 0.3, 0.3 },
+		{ 0.6, 0 },
+		{ 0, 0.6 },
+		{ 0.6, 0.6 },
+	};
+	
+	int W = frameWidth();
+	int H = frameHeight();
+	for (int y = 0; y < H; y++)
+		for (int x = 0; x < W; x++)
+			vfb[y][x] = raytrace(camera->getScreenRay(x, y));
+
+	for (int y = 0; y < H; y++)
+		for (int x = 0; x < W; x++) {
+			Color neighs[5];
+			neighs[0] = vfb[y][x];
+			
+			neighs[1] = vfb[y][x     > 0 ? x - 1 : x];
+			neighs[2] = vfb[y][x + 1 < W ? x + 1 : x];
+
+			neighs[3] = vfb[y     > 0 ? y - 1 : y][x];
+			neighs[4] = vfb[y + 1 < H ? y + 1 : y][x];
+			
+			Color average(0, 0, 0);
+			
+			for (int i = 0; i < 5; i++)
+				average += neighs[i];
+			average /= 5.0f;
+			
+			for (int i = 0; i < 5; i++)
+				if (tooDifferent(neighs[i], average)) {
+					needsAA[y][x] = true;
+					break;
+				}
+			if (needsAA[y][x])
+				vfb[y][x] = Color(1, 0, 0);
+		}
+		
+
+	/*
 	for (int y = 0; y < frameHeight(); y++)
 		for (int x = 0; x < frameWidth(); x++) {
-			Ray ray = camera->getScreenRay(x, y);
-			vfb[y][x] = raytrace(ray);
+			Color result(0, 0, 0);
+			for (int i = 0; i < 5; i++)
+				result += raytrace(camera->getScreenRay(x + kernel[i][0], y + kernel[i][1]));
+			vfb[y][x] = result / 5.0f;
 		}
+	*/
 }
 
 int main(int argc, char** argv)
 {
 	if (!initGraphics(RESX, RESY)) return -1;
 	initializeScene();
+	Uint32 startTicks = SDL_GetTicks();
 	renderScene();
+	Uint32 renderTime = SDL_GetTicks() - startTicks;
+	printf("Render time: %.2lf seconds.\n", renderTime/1000.0);
 	displayVFB(vfb);
 	waitForUserExit();
 	closeGraphics();
