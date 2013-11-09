@@ -130,7 +130,7 @@ bool needsAA[VFB_MAX_SIZE][VFB_MAX_SIZE];
 
 inline bool tooDifferent(const Color& a, const Color& b)
 {
-	const float THRESHOLD = 0.6;
+	const float THRESHOLD = 0.1;
 	return (fabs(a.r - b.r) > THRESHOLD ||
 		     fabs(a.g - b.g) > THRESHOLD ||
 		     fabs(a.b - b.b) > THRESHOLD);
@@ -174,10 +174,12 @@ void renderScene(void)
 					needsAA[y][x] = true;
 					break;
 				}
+		}
+
+	for (int y = 0; y < H; y++)
+		for (int x = 0; x < W; x++)
 			if (needsAA[y][x])
 				vfb[y][x] = Color(1, 0, 0);
-		}
-		
 
 	/*
 	for (int y = 0; y < frameHeight(); y++)
