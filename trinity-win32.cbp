@@ -43,6 +43,8 @@
 			<Add library="dxguid" />
 			<Add directory="L:/SDL-1.2.15/lib" />
 		</Linker>
+		<Unit filename="src/bitmap.cpp" />
+		<Unit filename="src/bitmap.h" />
 		<Unit filename="src/camera.cpp" />
 		<Unit filename="src/camera.h" />
 		<Unit filename="src/color.h" />
