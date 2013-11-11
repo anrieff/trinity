@@ -103,15 +103,15 @@ void initializeScene(void)
 	
 	lightPos = Vector(-90, 700, 350);
 	lightColor = Color(1, 1, 1);
-	lightPower = 350000;
-	ambientLight = Color(0.12, 0.12, 0.12);
+	lightPower = 800000;
+	ambientLight = Color(0.2, 0.2, 0.2);
 	
 	Plane* plane = new Plane(-0.01);
 	geometries.push_back(plane);
 	
-//	Texture* texture = new BitmapTexture("data/floor.bmp", 0.005);
+	Texture* texture = new BitmapTexture("data/floor.bmp", 0.005);
 	Checker* checker = new Checker(Color(1, 1, 1), Color(0, 0, 0), 35);
-	Lambert* lambert = new Lambert(Color(1, 1, 1), checker);
+	Lambert* lambert = new Lambert(Color(1, 1, 1), texture);
 	Node* floor = new Node(plane, lambert);
 	shaders.push_back(lambert);
 	nodes.push_back(floor);
@@ -131,10 +131,10 @@ void initializeScene(void)
 		new Sphere(Vector(-100, 60, 200), 70)
 	);
 	
-	createNode(diff, new Phong(Color(1,1, 0), 60, 1));
+	createNode(diff, new Phong(Color(0.5, 0.5, 0), 60, 1));
 
 	for (int i = 0; i < 3; i++)
-		createNode(new Sphere(Vector(100, 15, 256 - 50*i), 15), new Phong(Color(0, 0, 1), 80, 1));
+		createNode(new Sphere(Vector(100, 15, 256 - 50*i), 15), new Phong(Color(0, 0, 0.6), 80, 1));
 }
 
 bool needsAA[VFB_MAX_SIZE][VFB_MAX_SIZE];
