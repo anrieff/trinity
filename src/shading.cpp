@@ -37,7 +37,13 @@ Shader::Shader(const Color& color)
 
 Color Checker::getTexColor(const Ray& ray, double u, double v, Vector& normal)
 {
-	// example - u = 150, -230
+	/*
+	 * The checker texture works like that. Partition the whole 2D space
+	 * in squares of squareSize. Use division and floor()ing to get the
+	 * integral coordinates of the square, which our point happens to be. Then,
+	 * use the parity of the sum of those coordinates to decide which color to return.
+	 */
+	// example - u = 150, v = -230, size = 100
 	// -> 1, -3
 	int x = floor(u / size);
 	int y = floor(v / size);
@@ -49,9 +55,12 @@ Color Checker::getTexColor(const Ray& ray, double u, double v, Vector& normal)
 
 Color Lambert::shade(Ray ray, const IntersectionData& data)
 {
-	Color diffuseColor = this->color;
-	
+	// turn the normal vector towards us (if needed):
 	Vector N = faceforward(ray.dir, data.normal);
+
+	// fetch the material color. This is ether the solid color, or a color
+	// from the texture, if it's set up.
+	Color diffuseColor = this->color;
 	if (texture) diffuseColor = texture->getTexColor(ray, data.u, data.v, N);
 	
 	Color lightContrib = ambientLight;
@@ -60,6 +69,8 @@ Color Lambert::shade(Ray ray, const IntersectionData& data)
 		Vector lightDir = lightPos - data.p;
 		lightDir.normalize();
 		
+		// get the Lambertian cosine of the angle between the geometry's normal and
+		// the direction to the light. This will scale the lighting:
 		double cosTheta = dot(lightDir, N);
 		
 		lightContrib += lightColor * lightPower / (data.p - lightPos).lengthSqr() * cosTheta;
@@ -69,9 +80,10 @@ Color Lambert::shade(Ray ray, const IntersectionData& data)
 
 Color Phong::shade(Ray ray, const IntersectionData& data)
 {
-	Color diffuseColor = this->color;
-	
+	// turn the normal vector towards us (if needed):
 	Vector N = faceforward(ray.dir, data.normal);
+
+	Color diffuseColor = this->color;
 	if (texture) diffuseColor = texture->getTexColor(ray, data.u, data.v, N);
 	
 	Color lightContrib = ambientLight;
@@ -81,18 +93,26 @@ Color Phong::shade(Ray ray, const IntersectionData& data)
 		Vector lightDir = lightPos - data.p;
 		lightDir.normalize();
 		
+		// get the Lambertian cosine of the angle between the geometry's normal and
+		// the direction to the light. This will scale the lighting:
 		double cosTheta = dot(lightDir, N);
-		
+
+		// baseLight is the light that "arrives" to the intersection point
 		Color baseLight = lightColor * lightPower / (data.p - lightPos).lengthSqr();
 		
-		lightContrib += baseLight * cosTheta;
+		lightContrib += baseLight * cosTheta; // lambertian contribution
 		
+		// R = vector after the ray from the light towards the intersection point
+		// is reflected at the intersection:
 		Vector R = reflect(-lightDir, N);
 		
 		double cosGamma = dot(R, -ray.dir);
 		if (cosGamma > 0)
-			specular += baseLight * pow(cosGamma, exponent) * strength;
+			specular += baseLight * pow(cosGamma, exponent) * strength; // specular contribution
 	}
+	// specular is not multiplied by diffuseColor, since we want the specular hilights to be
+	// independent on the material color. I.e., a blue ball has white hilights
+	// (this is true for most materials, and false for some, e.g. gold)
 	return diffuseColor * lightContrib + specular;
 }
 
@@ -107,7 +127,8 @@ Color BitmapTexture::getTexColor(const Ray& ray, double u, double v, Vector& nor
 	u *= scaling;
 	v *= scaling;
 	u = u - floor(u);
-	v = v - floor(v);
-	
-	return bmp.getPixel(u * bmp.getWidth(), v * bmp.getHeight());
+	v = v - floor(v); // u, v range in [0..1)
+	float tx = (float) u * bmp.getWidth(); // u is in [0..textureWidth)
+	float ty = (float) v * bmp.getHeight(); // v is in [0..textureHeight)
+	return bmp.getPixel(tx, ty); // fetch a single pixel from the bitmap
 }

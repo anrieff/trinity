@@ -31,6 +31,7 @@ extern float lightPower;
 extern Color ambientLight;
 
 
+/// An abstract class, representing a shader in our scene.
 class Shader {
 protected:
 	Color color;
@@ -41,6 +42,7 @@ public:
 	virtual Color shade(Ray ray, const IntersectionData& data) = 0;
 };
 
+/// An abstract class, representing a (2D) texture
 class Texture {
 public:
 	virtual ~Texture() {}
@@ -48,9 +50,10 @@ public:
 	virtual Color getTexColor(const Ray& ray, double u, double v, Vector& normal) = 0;
 };
 
+/// A checker texture
 class Checker: public Texture {
-	Color color1, color2;
-	double size;
+	Color color1, color2; /// the colors of the alternating squares
+	double size; /// the size of a square side, in world units
 public:
 	Checker(const Color& color1, const Color& color2, double size = 1):
 		color1(color1), color2(color2), size(size) {}
@@ -66,18 +69,20 @@ public:
 	
 };
 
+/// A Lambert (flat) shader
 class Lambert: public Shader {
-	Texture* texture;
+	Texture* texture; //!< a diffuse texture, if not NULL.
 public:
 	Lambert(const Color& diffuseColor, Texture* texture = NULL):
 		Shader(diffuseColor), texture(texture) {}
 	Color shade(Ray ray, const IntersectionData& data);
 };
 
+/// A Phong shader
 class Phong: public Shader {
-	Texture* texture;
-	double exponent;
-	float strength;
+	Texture* texture; //!< a diffuse texture, if not NULL.
+	double exponent; //!< exponent ("shininess") of the material
+	float strength; //!< strenght of the cos^n specular component (0..1)
 public:
 	Phong(const Color& diffuseColor, double exponent, float strength = 1, Texture* texture = NULL):
 		Shader(diffuseColor), texture(texture), exponent(exponent),

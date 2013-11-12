@@ -23,17 +23,21 @@
 #include "vector.h"
 
 class Camera {
+	// these internal vectors describe three of the ends of the imaginary
+	// ray shooting screen
 	Vector upLeft, upRight, downLeft;
 public:
-	Vector pos; // position
-	double yaw, pitch, roll; // in degrees
-	double fov; // in degrees
-	double aspect; // 1.3 or ?
+	Vector pos; //!< position of the camera in 3D.
+	double yaw; //!< Yaw angle in degrees (rot. around the Y axis, meaningful values: [0..360])
+	double pitch; //!< Pitch angle in degrees (rot. around the X axis, meaningful values: [-90..90])
+	double roll; //!< Roll angle in degrees (rot. around the Z axis, meaningful values: [-180..180])
+	double fov; //!< The Field of view in degrees (meaningful values: [3..160])
+	double aspect; //!< The aspect ratio of the camera frame. Should usually be frameWidth/frameHeight,
 	
-	void beginFrame(void);
+	void beginFrame(void); //!< must be called before each frame. Computes the corner variables, needed for getScreenRay()
 	
+	/// generates a screen ray through a pixel (x, y - screen coordinates, not necessarily integer).
 	Ray getScreenRay(double x, double y);
-	
 };
 
 #endif // __CAMERA_H__

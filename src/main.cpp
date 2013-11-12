@@ -37,6 +37,7 @@ vector<Shader*> shaders;
 vector<Node*> nodes;
 
 
+/// traces a ray in the scene and returns the visible light that comes from that direction
 Color raytrace(Ray ray)
 {
 	IntersectionData data;
@@ -63,6 +64,8 @@ Color raytrace(Ray ray)
 	return closestNode->shader->shade(ray, data);
 }
 
+/// checks for visibility between points `from' and `to'
+/// (from is assumed to be near a surface, whereas to is near a light)
 bool testVisibility(const Vector& from, const Vector& to)
 {
 	Ray ray;
@@ -139,6 +142,7 @@ void initializeScene(void)
 
 bool needsAA[VFB_MAX_SIZE][VFB_MAX_SIZE];
 
+/// checks if two colors are "too different":
 inline bool tooDifferent(const Color& a, const Color& b)
 {
 	const float THRESHOLD = 0.1;
@@ -224,6 +228,7 @@ void renderScene(void)
 	}
 }
 
+/// handle a mouse click
 void handleMouse(SDL_MouseButtonEvent *mev)
 {
 	if (mev->button != 1) return; // only consider the left mouse button
