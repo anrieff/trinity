@@ -59,6 +59,17 @@ void displayVFB(Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE])
 	SDL_Flip(screen);
 }
 
+void setWindowCaption(const char* msg, double renderTime)
+{
+	if (renderTime >= 0) {
+		char message[128];
+		sprintf(message, msg, renderTime);
+		SDL_WM_SetCaption(message, NULL);
+	} else {
+		SDL_WM_SetCaption(msg, NULL);
+	}
+}
+
 /// waits the user to indicate he wants to close the application (by either clicking on the "X" of the window,
 /// or by pressing ESC)
 void waitForUserExit(void)

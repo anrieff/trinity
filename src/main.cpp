@@ -149,6 +149,7 @@ inline bool tooDifferent(const Color& a, const Color& b)
 
 void renderScene(void)
 {
+	setWindowCaption("trinity: rendering");
 	const double kernel[5][2] = {
 		{ 0, 0 },
 		{ 0.3, 0.3 },
@@ -239,8 +240,9 @@ int main(int argc, char** argv)
 	initializeScene();
 	Uint32 startTicks = SDL_GetTicks();
 	renderScene();
-	Uint32 renderTime = SDL_GetTicks() - startTicks;
-	printf("Render time: %.2lf seconds.\n", renderTime / 1000.0);
+	double renderTime = (SDL_GetTicks() - startTicks) / 1000.0;
+	printf("Render time: %.2lf seconds.\n", renderTime);
+	setWindowCaption("trinity: rendertime: %.2lfs", renderTime);
 	displayVFB(vfb);
 	waitForUserExit();
 	closeGraphics();
