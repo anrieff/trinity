@@ -23,6 +23,9 @@
 #include "color.h"
 #include "constants.h"
 #include "bitmap.h"
+#include <ImfRgbaFile.h>
+#include <ImfArray.h>
+#include <Iex.h>
 
 Bitmap::Bitmap()
 {
@@ -225,4 +228,32 @@ bool Bitmap::saveBMP(const char* filename)
 	}
 	fclose(fp);
 	return true;
+}
+
+bool Bitmap::loadEXR(const char* filename)
+{
+	try {
+		Imf::RgbaInputFile exr(filename);
+		Imf::Array2D<Imf::Rgba> pixels;
+		Imath::Box2i dw = exr.dataWindow();
+		width  = dw.max.x - dw.min.x + 1;
+		height = dw.max.y - dw.min.y + 1;
+		pixels.resizeErase(width, height);
+		exr.setFrameBuffer(&pixels[0][0] - dw.min.x - dw.min.y * width, 1, width);
+		exr.readPixels(dw.min.y, dw.min.x);
+		data = new Color[width * height];
+		for (int y = 0; y < height; y++)
+			for (int x = 0; x < width; x++) {
+				Color& pixel = data[y * width + x];
+				pixel.r = pixels[y][x].r;
+				pixel.g = pixels[y][x].g;
+				pixel.b = pixels[y][x].b;
+			}
+		return true;
+	}
+	catch (Iex::BaseExc ex) {
+		width = height = 0;
+		data = NULL;
+		return false;
+	}
 }

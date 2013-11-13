@@ -118,7 +118,10 @@ Color Phong::shade(Ray ray, const IntersectionData& data)
 
 BitmapTexture::BitmapTexture(const char* fileName, double scaling)
 {
-	bmp.loadBMP(fileName);
+	if (extensionUpper(fileName) == "EXR")
+		bmp.loadEXR(fileName);
+	else
+		bmp.loadBMP(fileName);
 	this->scaling = scaling;
 }
 

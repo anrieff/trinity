@@ -39,6 +39,7 @@ public:
 	void setPixel(int x, int y, const Color& col); //!< Sets the pixel at coordinates (x, y).
 	
 	bool loadBMP(const char* filename); //!< Loads an image from a BMP file. Returns false in the case of an error
+	bool loadEXR(const char* filename); //!< Loads an EXR file
 	bool saveBMP(const char* filename); //!< Saves the image to a BMP file (with clamping, etc). Returns false in the case of an error (e.g. read-only media)
 };
 
