@@ -135,6 +135,10 @@ static bool parseCmdLine(int argc, char** argv)
 {
 	for (int i = 1; i < argc; i++) {
 		string par = argv[i];
+		if (par == "-h" || par == "--help") {
+			printf("%s", USAGE);
+			return false;
+		}
 		if (par == "-mult") {
 			i++;
 			if (i >= argc || 1 != sscanf(argv[i], "%f", &mult) || mult < 0)

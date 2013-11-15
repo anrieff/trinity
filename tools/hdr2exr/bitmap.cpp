@@ -456,8 +456,70 @@ bool Environment::save(const char* filename)
 	}
 }
 
+static void copyBmp(const Bitmap* source, int offsetX, int offsetY, Bitmap* dest)
+{
+	for (int y = 0; y < dest->getHeight(); y++)
+		for (int x = 0; x < dest->getWidth(); x++)
+			dest->setPixel(x, y, source->getPixel(x + offsetX, y + offsetY));
+}
+
 void Environment::convert(Format targetFormat, int outSize)
 {
+	if (format == ANGULAR) {
+		// convert to spherical:
+		Bitmap& bmp = *maps[0];
+		Color newRow[bmp.getWidth()];
+		for (int y = 0; y < bmp.getHeight(); y++) {
+			float ry = ((y / float(bmp.getHeight() - 1)) - 0.5f) * 2.0f;
+			float scaling = sqrtf(1 - ry * ry);
+			for (int x = 0; x < bmp.getHeight(); x++) {
+				float fx = ((x / float(bmp.getWidth() - 1)) - 0.5) * 2.0f;
+				fx *= scaling;
+				int srcx = (int) floor(0.5f + (fx / 2.0f + 0.5) * (bmp.getWidth() - 1));
+				if (srcx < 0) srcx = 0;
+				if (srcx >= bmp.getWidth()) srcx = bmp.getWidth() - 1;
+				newRow[x] = bmp.getPixel(srcx, y);
+			}
+			for (int x = 0; x < bmp.getWidth(); x++) {
+				bmp.setPixel(x, y, newRow[x]);
+			}
+		}
+		format = SPHERICAL;
+	}
+	if (format == VCROSS || format == HCROSS) {
+		// convert CROSS format into separate cube sides:
+		Bitmap* bmp = maps[0];
+		delete[] maps;
+		
+		maps = new Bitmap*[6];
+		numMaps = 6;
+		
+		int squareSize = max(bmp->getWidth(), bmp->getHeight()) / 4;
+		for (int i = 0; i < 6; i++) {
+			maps[i] = new Bitmap;
+			maps[i]->generateEmptyImage(squareSize, squareSize);
+		}
+		
+		int S = squareSize;
+		if (format == VCROSS) {
+			copyBmp(bmp, S    , 0    , maps[POSY]);
+			copyBmp(bmp, 0    , S    , maps[NEGX]);
+			copyBmp(bmp, S    , S    , maps[POSZ]);
+			copyBmp(bmp, 2 * S, S    , maps[POSX]);
+			copyBmp(bmp, S    , 2 * S, maps[NEGY]);
+			copyBmp(bmp, S    , 3 * S, maps[NEGZ]);
+		} else {
+			copyBmp(bmp, S    , 0    , maps[POSY]);
+			copyBmp(bmp, 0    , S    , maps[NEGX]);
+			copyBmp(bmp, S    , S    , maps[POSZ]);
+			copyBmp(bmp, 2 * S, S    , maps[POSX]);
+			copyBmp(bmp, 3 * S, S    , maps[NEGZ]);
+			copyBmp(bmp, S    , 2 * S, maps[NEGY]);
+		}
+		
+		delete bmp;
+		format = DIR;
+	}
 }
 
 void Environment::multiply(float mult)
