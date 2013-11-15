@@ -82,10 +82,10 @@ bool Bitmap::tryLoadPFM(FILE* f)
 		}
 		if (gray) {
 			for (int x = 0; x < w; x++)
-				setPixel(x, y, Color(fline[x], fline[x], fline[x]));
+				setPixel(x, h - 1 - y, Color(fline[x], fline[x], fline[x]));
 		} else {
 			for (int x = 0; x < w; x++)
-				setPixel(x, y, Color(fline[x*3], fline[x*3+1], fline[x*3+2]));
+				setPixel(x, h - 1 - y, Color(fline[x*3], fline[x*3+1], fline[x*3+2]));
 		}
 	}
 	delete[] line;

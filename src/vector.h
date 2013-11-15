@@ -185,13 +185,16 @@ inline Vector unproject(const Vector& v, int a, int b, int c)
 struct Ray {
 	Vector start, dir;
 	bool debug;
+	int depth;
 	Ray() {
 		debug = false;
+		depth = 0;
 	}
 	Ray(const Vector& _start, const Vector& _dir) {
 		start = _start;
 		dir = _dir;
 		debug = false;
+		depth = 0;
 	}
 };
 

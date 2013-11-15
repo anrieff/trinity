@@ -26,5 +26,6 @@
 #define RESY 480
 #define PI 3.141592653589793238
 #define INF 1e99
+#define MAX_TRACE_DEPTH 10
 
 #endif // __CONSTANTS_H__

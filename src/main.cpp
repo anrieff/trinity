@@ -26,6 +26,7 @@
 #include "camera.h"
 #include "geometry.h"
 #include "shading.h"
+#include "environment.h"
 using namespace std;
 
 Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE]; //!< virtual framebuffer
@@ -35,12 +36,15 @@ Camera* camera;
 vector<Geometry*> geometries;
 vector<Shader*> shaders;
 vector<Node*> nodes;
+Environment* environment = NULL;
 
 /// traces a ray in the scene and returns the visible light that comes from that direction
 Color raytrace(Ray ray)
 {
 	IntersectionData data;
 	Node* closestNode = NULL;
+	
+	if (ray.depth > MAX_TRACE_DEPTH) return Color(0, 0, 0);
 
 	if (ray.debug)
 		cout << "  Raytrace[start = " << ray.start << ", dir = " << ray.dir << "]\n";
@@ -51,7 +55,10 @@ Color raytrace(Ray ray)
 		if (nodes[i]->geom->intersect(ray, data))
 			closestNode = nodes[i];
 
-	if (!closestNode) return Color(0, 0, 0);
+	if (!closestNode) {
+		if (environment != NULL) return environment->getEnvironment(ray.dir);
+		return Color(0, 0, 0);
+	}
 	
 	if (ray.debug) {
 		cout << "    Hit " << closestNode->geom->getName() << " at distance " << fixed << setprecision(2) << data.dist << endl;
@@ -94,10 +101,10 @@ void createNode(Geometry* geometry, Shader* shader)
 void initializeScene(void)
 {
 	camera = new Camera;
-	camera->yaw = 15;
-	camera->pitch = -15;
+	camera->yaw = 10;
+	camera->pitch = -5;
 	camera->roll = 0;
-	camera->fov = 100;
+	camera->fov = 90;
 	camera->aspect = 4. / 3.0;
 	camera->pos = Vector(45, 120, -300);
 	
@@ -120,18 +127,19 @@ void initializeScene(void)
 	Texture* world = new BitmapTexture("data/world.bmp");
 	
 	Sphere* sphere = new Sphere(Vector(100, 50, 60), 50);
-	Lambert* sphereshader = new Lambert(Color(1,1,1), world);
+	Shader* sphereshader = new Refr(Color(0.8, 0.9, 0.8), 1.6f);
 	createNode(sphere, sphereshader);
 	
-	CsgOp* diff = new CsgDiff(
+	createNode(
 		new Cube(Vector(-100, 60, -60), 100),
-		new Sphere(Vector(-100, 60, -60), 70)
-	);
+		new Refr(Color(0.9, 0.9, 0.9), 1.6));
 	
-	createNode(diff, new Phong(Color(0.5, 0.5, 0), 60, 1));
-
+//	createNode(diff, new Phong(Color(0.5, 0.5, 0), 60, 1));
+	
 	for (int i = 0; i < 3; i++)
-		createNode(new Sphere(Vector(100, 15, -50*i), 15), new Phong(Color(0, 0, 0.6), 80, 1));
+		createNode(new Sphere(Vector(80, 15, -100+50*i), 15), new Refr(Color(0.99, 0.99, 0.99), 1.0 + i * 0.2));
+		
+	environment = new CubemapEnvironment("data/env/forest");
 }
 
 bool needsAA[VFB_MAX_SIZE][VFB_MAX_SIZE];

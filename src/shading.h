@@ -90,4 +90,17 @@ public:
 	Color shade(Ray ray, const IntersectionData& data);
 };
 
+class Refl: public Shader {
+public:
+	Refl(const Color& filter = Color(1, 1, 1)): Shader(filter) {}
+	Color shade(Ray ray, const IntersectionData& data);
+};
+
+class Refr: public Shader {
+	float ior;
+public:
+	Refr(const Color& filter, float ior): Shader(filter), ior(ior) {}
+	Color shade(Ray ray, const IntersectionData& data);
+};
+
 #endif // __SHADING_H__

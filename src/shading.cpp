@@ -26,7 +26,7 @@ float lightPower;
 Color ambientLight;
 
 extern bool testVisibility(const Vector& from, const Vector& to);
-
+extern Color raytrace(Ray ray);
 
 
 
@@ -134,4 +134,38 @@ Color BitmapTexture::getTexColor(const Ray& ray, double u, double v, Vector& nor
 	float tx = (float) u * bmp.getWidth(); // u is in [0..textureWidth)
 	float ty = (float) v * bmp.getHeight(); // v is in [0..textureHeight)
 	return bmp.getPixel(tx, ty); // fetch a single pixel from the bitmap
+}
+
+Color Refl::shade(Ray ray, const IntersectionData& data)
+{
+	Vector N = faceforward(ray.dir, data.normal);
+	
+	Vector reflected = reflect(ray.dir, N);
+	
+	Ray newRay = ray;
+	newRay.start = data.p + N * 1e-6;
+	newRay.dir = reflected;
+	newRay.depth = ray.depth + 1;
+	return raytrace(newRay) * color;
+}
+
+Color Refr::shade(Ray ray, const IntersectionData& data)
+{
+	Vector N = faceforward(ray.dir, data.normal);
+	
+	
+	float eta = ior;
+	if (dot(ray.dir, data.normal) < 0)
+		eta = 1.0f / eta;
+	
+	Vector refracted = refract(ray.dir, N, eta);
+	
+	// total inner refraction:
+	if (refracted.lengthSqr() == 0) return Color(0, 0, 0);
+	
+	Ray newRay = ray;
+	newRay.start = data.p + ray.dir * 1e-6;
+	newRay.dir = refracted;
+	newRay.depth = ray.depth + 1;
+	return raytrace(newRay) * color;
 }
