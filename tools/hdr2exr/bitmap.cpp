@@ -20,8 +20,23 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
+#include <glob.h>
+#include <vector>
+#include <string>
+#include <algorithm>
 #include "color.h"
 #include "bitmap.h"
+#include "util.h"
+using std::vector;
+using std::string;
+using std::sort;
+using std::max;
+using std::min;
+
+const char* CubeOrderNames[6] = {
+	"negx", "negy", "negz", "posx", "posy", "posz"
+};
 
 Bitmap::Bitmap()
 {
@@ -224,4 +239,232 @@ bool Bitmap::saveBMP(const char* filename)
 	}
 	fclose(fp);
 	return true;
+}
+
+bool Bitmap::loadImageFile(const char* filename)
+{
+	string ext = upCaseString(getExtension(filename));
+	if (ext == "BMP")
+		return loadBMP(filename);
+	else if (ext == "EXR")
+		return loadEXR(filename);
+	else if (ext == "PFM")
+		return loadPFM(filename);
+	else if (ext == "HDR" || ext == "HDRI" || ext == "RGBE")
+		return loadHDR(filename);
+	else {
+		printf("Bitmap::loadImageFile(): Unknown extension: `%s'\n", ext.c_str());
+		return false;
+	}
+}
+
+struct CoeffCacheElem {
+	int src, dest;
+	float* coefficients;
+	CoeffCacheElem* next;
+};
+
+class CoeffCache {
+	CoeffCacheElem* root;
+public:
+	CoeffCache() { root = NULL; }
+	~CoeffCache() {
+		CoeffCacheElem* e = root, *next;
+		for (; e != NULL; e = next) {
+			next = e->next;
+			delete [] e->coefficients;
+			delete e;
+		}
+	}
+	float* getCoefficients(int src_len, int dest_len)
+	{
+		CoeffCacheElem* e = root;
+		while (e) {
+			if (e->src == src_len && e->dest == dest_len) return e->coefficients;
+			e = e->next;
+		}
+		CoeffCacheElem* new_element = new CoeffCacheElem;
+		new_element->src = src_len;
+		new_element->dest = dest_len;
+		new_element->coefficients = new float[dest_len];
+		memset(new_element->coefficients, 0, sizeof(float) * dest_len);
+		float ratio = (dest_len-1)/((float)src_len-1);
+		for (int i = 0; i < src_len; i++) {
+			float x = i * ratio;
+			int xx = (int) x;
+			float mul1 = 1.0f - (x-xx);
+			new_element->coefficients[xx] += mul1;
+			if (xx + 1 < dest_len)
+				new_element->coefficients[xx + 1] += 1.0f - mul1;
+		}
+		for (int i = 0; i < dest_len; i++)
+			new_element->coefficients[i] = 1.0f / new_element->coefficients[i];
+			
+		new_element->next = root;
+		root = new_element;
+		return new_element->coefficients;
+	}
+};
+
+static CoeffCache coeffsCache;
+
+
+static int arrayResize(Color *src, int src_len, Color *dest, int dest_len, float* coefficients)
+{
+	float ratio = (dest_len-1)/((float)src_len-1);
+	for (int i = 0; i < src_len; i++) {
+		float x = i * ratio;
+		int xx = (int) x;
+		float mul1 = 1.0f - (x-xx);
+		dest[xx].b += mul1 * src[i].b;
+		dest[xx].g += mul1 * src[i].g;
+		dest[xx].r += mul1 * src[i].r;
+		if (xx + 1 < dest_len) {
+			mul1 = 1.0f - mul1;
+			dest[xx + 1].b += mul1 * src[i].b;
+			dest[xx + 1].g += mul1 * src[i].g;
+			dest[xx + 1].r += mul1 * src[i].r;
+		}
+	}
+	for (int i = 0; i < dest_len; i++) {
+		dest[i].b *= coefficients[i];
+		dest[i].g *= coefficients[i];
+		dest[i].r *= coefficients[i];
+	}
+	return 1;
+}
+
+
+void Bitmap::rescale(int newMaxDim)
+{
+	if (max(width, height) <= newMaxDim) return;
+	float scaleFactor = max(width, height) / float(newMaxDim);
+	
+	int newWidth  = (int) floor(width  / scaleFactor + 0.5f);
+	int newHeight = (int) floor(height / scaleFactor + 0.5f);
+	
+	Color* newData = new Color[newWidth * newHeight];
+	
+	// resize by x:
+	Color row[width];
+	float* coefficients = coeffsCache.getCoefficients(width, newWidth);
+	for (int y = 0; y < height; y++) {
+		arrayResize(data + (y * width), width, row, newWidth, coefficients);
+		memcpy(data + (y * width), row, newWidth * sizeof(Color));
+	}
+	
+	// resize by y:
+	coefficients = coeffsCache.getCoefficients(height, newHeight);
+	Color column[height], newColumn[newHeight];
+	for (int x = 0; x < newWidth; x++) {
+		for (int y = 0; y < height; y++)
+			column[y] = data[x + y * width];
+		arrayResize(column, height, newColumn, newHeight, coefficients);
+		for (int y = 0; y < newHeight; y++)
+			newData[x + y * newWidth] = newColumn[y];
+	}
+	delete[] data;
+	data = newData;
+	height = newHeight;
+	width = newWidth;
+}
+
+
+Environment::Environment()
+{
+	maps = NULL;
+	numMaps = 0;
+	format = UNDEFINED;
+}
+
+Environment::~Environment()
+{
+	if (numMaps && maps) {
+		for (int i = 0; i < numMaps; i++) {
+			delete maps[i];
+			maps[i] = NULL;
+		}
+		delete [] maps;
+		maps = NULL;
+		numMaps = 0;
+	}
+}
+
+bool Environment::load(const char* filename, Format inputFormat)
+{
+	format = inputFormat;
+	numMaps = (format == DIR) ? 6 : 1;
+	maps = new Bitmap* [numMaps];
+	for (int i = 0; i < numMaps; i++)
+		maps[i] = new Bitmap;
+	if (format != DIR) {
+		return maps[0]->loadImageFile(filename);
+	} else {
+		glob_t gl;
+		char pattern[strlen(filename) + 10];
+		strcpy(pattern, filename);
+		strcat(pattern, "/*.*");
+		if (glob(pattern, 0, NULL, &gl)) return false;
+		vector<string> names;
+		for (int i = 0; i < gl.gl_pathc; i++)
+			names.push_back(gl.gl_pathv[i]);
+		globfree(&gl);
+		
+		sort(names.begin(), names.end());
+		if (names.size() != 6) return false;
+		for (int i = 0; i < 6; i++) {
+			if (names[i].find(CubeOrderNames[i]) == string::npos) {
+				printf("Environment::load: Couldn't find a file %s in directory %s\n", CubeOrderNames[i], filename);
+				return false;
+			}
+			if (!maps[i]->loadImageFile(names[i].c_str())) {
+				printf("Environment::load: Couldn't load the file %s from directory %s\n", names[i].c_str(), filename);
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+bool Environment::save(const char* filename)
+{
+	if (format == SPHERICAL) {
+		return maps[0]->saveEXR(filename);
+	} else {
+		assert(format == DIR);
+		//filename is a dirname. Create all directories up to it:
+		char s[strlen(filename) + 3];
+		strcpy(s, filename);
+		int l = (int) strlen(s);
+		for (int i = 1; i < l; i++) if (s[i] == '/') {
+			s[i] = 0;
+			if (!mkdirIfNeeded(s)) return false;
+			s[i] = '/';
+		}
+		if (s[l - 1] != '/')
+			if (!mkdirIfNeeded(s)) return false;
+		for (int i = 0; i < 6; i++) {
+			char fullFileName[strlen(filename) + 16];
+			strcpy(fullFileName, filename);
+			if (filename[l - 1] != '/' && filename[l - 1] != '\\')
+				strcat(fullFileName, "/");
+			strcat(fullFileName, CubeOrderNames[i]);
+			strcat(fullFileName, ".exr");
+			if (!maps[i]->saveEXR(fullFileName)) return false;
+		}
+		return true;
+	}
+}
+
+void Environment::convert(Format targetFormat, int outSize)
+{
+}
+
+void Environment::multiply(float mult)
+{
+	for (int i = 0; i < numMaps; i++) {
+		Color* buff = maps[i]->getData();
+		for (int j = 0; j < maps[i]->getWidth() * maps[i]->getHeight(); j++)
+			buff[j] *= mult;
+	}
 }

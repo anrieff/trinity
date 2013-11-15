@@ -22,6 +22,7 @@
 #include <ImfRgbaFile.h>
 #include <ImfArray.h>
 #include <Iex.h>
+#include <vector>
 #include "bitmap.h"
 
 bool Bitmap::loadEXR(const char* filename)
@@ -32,16 +33,16 @@ bool Bitmap::loadEXR(const char* filename)
 		Imath::Box2i dw = exr.dataWindow();
 		width  = dw.max.x - dw.min.x + 1;
 		height = dw.max.y - dw.min.y + 1;
-		pixels.resizeErase(width, height);
+		pixels.resizeErase(height, width);
 		exr.setFrameBuffer(&pixels[0][0] - dw.min.x - dw.min.y * width, 1, width);
-		exr.readPixels(dw.min.y, dw.min.x);
+		exr.readPixels(dw.min.y, dw.max.y);
 		data = new Color[width * height];
 		for (int y = 0; y < height; y++)
 			for (int x = 0; x < width; x++) {
 				Color& pixel = data[y * width + x];
-				pixel.r = pixels[y][x].r;
-				pixel.g = pixels[y][x].g;
-				pixel.b = pixels[y][x].b;
+				pixel.r = pixels[y + dw.min.y][x + dw.min.x].r;
+				pixel.g = pixels[y + dw.min.y][x + dw.min.x].g;
+				pixel.b = pixels[y + dw.min.y][x + dw.min.x].b;
 			}
 		return true;
 	}
@@ -54,5 +55,20 @@ bool Bitmap::loadEXR(const char* filename)
 
 bool Bitmap::saveEXR(const char* filename)
 {
-	
+	try {
+		Imf::RgbaOutputFile file(filename, width, height, Imf::WRITE_RGBA);
+		std::vector<Imf::Rgba> temp(width * height);
+		for (int i = 0; i < width * height; i++) {
+			temp[i].r = data[i].r;
+			temp[i].g = data[i].g;
+			temp[i].b = data[i].b;
+			temp[i].a = 1.0f;
+		}
+		file.setFrameBuffer(&temp[0], 1, width);
+		file.writePixels(height);
+	}
+	catch (Iex::BaseExc ex) {
+		return false;
+	}
+	return true;
 }

@@ -29,8 +29,9 @@
  */ 
 
 #include <stdio.h>
+#include <SDL/SDL.h>
 #include <string>
-#include <algorithm>
+#include "util.h"
 #include "bitmap.h"
 using namespace std;
 
@@ -40,7 +41,7 @@ const char* USAGE = ""
 "The INPUT FILE can be .hdr/.pfm/.exr/.bmp or a directory (see below)\n"
 "The OUTPUT FILE must be .exr (it is saved as 16 bpp half-float pixels).\n"
 "If no OUTPUT FILE is given, the input image is just displayed in a window,\n"
-"using spherical mapping\n"
+"using spherical mapping (use the +/- buttons to adjust brightness)\n"
 "\n"
 "Options:\n"
 "   -mult <multiplier> - multiply image's pixels after reading\n"
@@ -86,31 +87,15 @@ const char* USAGE = ""
 "`spherical'. The same applies to the preview mode (it will display the\n"
 "environment map as if it is spherical format)\n";
 
-enum Format {
-	SPHERICAL,
-	ANGULAR,
-	VCROSS,
-	HCROSS,
-	DIR,
-	//
-	UNDEFINED,
-};
-
 string inFile, outFile;
 Format inFmt = SPHERICAL, outFmt = SPHERICAL;
 float mult = 1.0f;
-int outSize = 1024;
+int outSize = -1;
 
 static bool error(const char* msg)
 {
 	printf("Error: %s\n", msg);
 	return false;
-}
-
-static string upCaseString(string s)
-{
-	transform(s.begin(), s.end(), s.begin(), [] (char c) { return toupper(c); } );
-	return s;
 }
 
 static Format parseSingleFmtSpecifier(const string& par)
@@ -138,7 +123,12 @@ static bool parseFmtSpecifier(string par)
 	
 	inFmt = parseSingleFmtSpecifier(upCaseString(par.substr(0, i)));
 	outFmt = parseSingleFmtSpecifier(upCaseString(par.substr(i + 1)));
-	return inFmt != UNDEFINED && outFmt != UNDEFINED;
+	if (inFmt == UNDEFINED || outFmt == UNDEFINED) return false;
+	if (outFmt != DIR && outFmt != SPHERICAL) {
+		printf("Error: the output format must be one of { dir, spherical }\n");
+		return false;
+	}
+	return true;
 }
 
 static bool parseCmdLine(int argc, char** argv)
@@ -172,11 +162,90 @@ static bool parseCmdLine(int argc, char** argv)
 	return true;
 }
 
+void displayBitmap(const Bitmap& bmp)
+{
+	SDL_Init(SDL_INIT_VIDEO);
+	SDL_Surface* screen = SDL_SetVideoMode(bmp.getWidth(), bmp.getHeight(), 32, 0);
+	Uint8* buffer = (Uint8*) screen->pixels;
+	
+	bool running = true;
+	int cMult = 0;
+	int lastMult = -99;
+
+	while (running) {
+		if (lastMult != cMult) {
+			float m = pow(2.0f, cMult / 6.0f);
+			printf("Multiplier = %f, total multiplier = %f\n", m, m * mult);
+			for (int y = 0; y < bmp.getHeight(); y++) {
+				Uint32* row = (Uint32*) (buffer + (y * screen->pitch));
+				for (int x = 0; x < bmp.getWidth(); x++) {
+					row[x] = (bmp.getPixel(x, y) * m).toRGB32();
+				}
+			}
+			SDL_Flip(screen);
+			lastMult = cMult;
+		}
+		SDL_Event ev;
+		SDL_WaitEvent(&ev);
+		
+		switch (ev.type) {
+			case SDL_QUIT:
+				running = false;
+				break;
+			case SDL_KEYDOWN:
+			{
+				switch (ev.key.keysym.sym) {
+					case SDLK_ESCAPE:
+						running = false;
+						break;
+						
+					case SDLK_PLUS:
+					case SDLK_KP_PLUS:
+						cMult++;
+						break;
+						
+					case SDLK_MINUS:
+					case SDLK_KP_MINUS:
+						cMult--;
+						break;
+						
+					default:
+						break;
+				}
+				break;
+			}
+			default:
+				break;
+		}
+	}
+	SDL_Quit();
+}
+
 int main(int argc, char** argv)
 {
 	if (!parseCmdLine(argc, argv)) {
 		printf("%s", USAGE);
 		return 1;
+	}
+	Environment env;
+	if (!env.load(inFile.c_str(), inFmt)) {
+		printf("Cannot load input environment `%s'\n", inFile.c_str());
+		return 2;
+	}
+	
+	if (mult != 1) env.multiply(mult);
+	env.convert(outFmt, outSize);
+	
+	if (outFile != "") {
+		env.save(outFile.c_str());
+	} else {
+		if (outFmt != SPHERICAL) {
+			printf("Error: displaying an image cannot be done in a format other than spherical!\n");
+			return 3;
+		}
+		Bitmap& img = env.getMap(0);
+		img.rescale(outSize > 0 ? outSize : 1024);
+		displayBitmap(img);
 	}
 	return 0;
 }

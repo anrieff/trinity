@@ -18,29 +18,32 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "bitmap.h"
-#include "rgbe.h"
-#include "util.h"
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <string>
 #include <vector>
-using std::vector;
+#include <algorithm>
+#include <cctype>
+using namespace std;
 
-bool Bitmap::loadHDR(const char* filename)
+string upCaseString(string s)
 {
-	FILE* fp = fopen(filename, "rb");
-	if (!fp) return false;
-	//
-	FileRAII holder(fp);
-	rgbe_header_info header;
-	if (RGBE_ReadHeader(fp, &width, &height, &header) != RGBE_RETURN_SUCCESS)
-		return false;
-	//
-	data = new Color[width * height];
-	vector<float> temp(width * 3);
-	for (int y = 0; y < height; y++) {
-		int res = RGBE_ReadPixels_RLE(fp, &temp[0], width, 1);
-		if (res != RGBE_RETURN_SUCCESS) return false;
-		for (int x = 0; x < width; x++) 
-			data[x + y * width] = Color(temp[x * 3], temp[x * 3 + 1], temp[x * 3 + 2]);
-	}
-	return true;
+	transform(s.begin(), s.end(), s.begin(), [] (char c) { return toupper(c); } );
+	return s;
+}
+
+string getExtension(string filename)
+{
+	for (int i = (int) filename.size() - 1; i >= 0; i--)
+		if (filename[i] == '.') return filename.substr(i + 1);
+	return filename;
+}
+
+bool mkdirIfNeeded(const char* dirname)
+{
+	struct stat st;
+	if (stat(dirname, &st) == 0) return true;
+	return mkdir(dirname, 0777) == 0;
 }

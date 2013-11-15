@@ -18,29 +18,23 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "bitmap.h"
-#include "rgbe.h"
-#include "util.h"
-#include <vector>
-using std::vector;
+#ifndef __UTIL_H__
+#define __UTIL_H__
 
-bool Bitmap::loadHDR(const char* filename)
-{
-	FILE* fp = fopen(filename, "rb");
-	if (!fp) return false;
-	//
-	FileRAII holder(fp);
-	rgbe_header_info header;
-	if (RGBE_ReadHeader(fp, &width, &height, &header) != RGBE_RETURN_SUCCESS)
-		return false;
-	//
-	data = new Color[width * height];
-	vector<float> temp(width * 3);
-	for (int y = 0; y < height; y++) {
-		int res = RGBE_ReadPixels_RLE(fp, &temp[0], width, 1);
-		if (res != RGBE_RETURN_SUCCESS) return false;
-		for (int x = 0; x < width; x++) 
-			data[x + y * width] = Color(temp[x * 3], temp[x * 3 + 1], temp[x * 3 + 2]);
-	}
-	return true;
-}
+#include <stdio.h>
+#include <string>
+
+std::string upCaseString(std::string s); //!< returns an uppercased version of the string
+std::string getExtension(std::string filename); //!< gets the extension of a file name (without the dot)
+bool mkdirIfNeeded(const char* dirname);
+
+class FileRAII {
+	FILE* held;
+public:
+	FileRAII(FILE* init): held(init) {}
+	~FileRAII() { if (held) fclose(held); held = NULL; }
+	FileRAII(const FileRAII&) = delete;
+	FileRAII& operator = (const FileRAII&) = delete;
+};
+
+#endif // __UTIL_H__
