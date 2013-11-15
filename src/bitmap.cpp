@@ -238,16 +238,16 @@ bool Bitmap::loadEXR(const char* filename)
 		Imath::Box2i dw = exr.dataWindow();
 		width  = dw.max.x - dw.min.x + 1;
 		height = dw.max.y - dw.min.y + 1;
-		pixels.resizeErase(width, height);
+		pixels.resizeErase(height, width);
 		exr.setFrameBuffer(&pixels[0][0] - dw.min.x - dw.min.y * width, 1, width);
-		exr.readPixels(dw.min.y, dw.min.x);
+		exr.readPixels(dw.min.y, dw.max.y);
 		data = new Color[width * height];
 		for (int y = 0; y < height; y++)
 			for (int x = 0; x < width; x++) {
 				Color& pixel = data[y * width + x];
-				pixel.r = pixels[y][x].r;
-				pixel.g = pixels[y][x].g;
-				pixel.b = pixels[y][x].b;
+				pixel.r = pixels[y + dw.min.y][x + dw.min.x].r;
+				pixel.g = pixels[y + dw.min.y][x + dw.min.x].g;
+				pixel.b = pixels[y + dw.min.y][x + dw.min.x].b;
 			}
 		return true;
 	}
