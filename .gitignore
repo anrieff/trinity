@@ -5,3 +5,7 @@ bin/
 obj/
 SDL.dll
 00*.patch
+*.o
+tools/hdr2exr/*.exr
+tools/hdr2exr/hdr2exr
+
