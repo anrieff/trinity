@@ -257,3 +257,13 @@ bool Bitmap::loadEXR(const char* filename)
 		return false;
 	}
 }
+
+bool Bitmap::loadImage(const char* filename)
+{
+	if (extensionUpper(filename) == "BMP")
+		return loadBMP(filename);
+	else if (extensionUpper(filename) == "EXR")
+		return loadEXR(filename);
+	else return false;
+}
+

@@ -41,8 +41,11 @@ bool Plane::intersect(Ray ray, IntersectionData& data)
 		// if the distance to the intersection (mult) doesn't optimize our current distance, bail out:
 		if (mult > data.dist) return false;
 		
+		Vector p = ray.start + ray.dir * mult;
+		if (fabs(p.x) > limit || fabs(p.z) > limit) return false;
+		
 		// calculate intersection:
-		data.p = ray.start + ray.dir * mult;
+		data.p = p;
 		data.dist = mult;
 		data.normal = Vector(0, 1, 0);
 		data.u = data.p.x;

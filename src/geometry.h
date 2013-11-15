@@ -61,8 +61,9 @@ public:
 
 class Plane: public Geometry {
 	double y; //!< y-intercept. The plane is parallel to XZ, the y-intercept is at this value
+	double limit;
 public:
-	Plane(double _y) { y = _y; }
+	Plane(double _y, double _limit = 1e99) { y = _y; limit = _limit; }
 	
 	bool intersect(Ray ray, IntersectionData& data);
 	const char* getName() { return "Plane"; }

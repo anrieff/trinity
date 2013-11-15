@@ -36,7 +36,6 @@ vector<Geometry*> geometries;
 vector<Shader*> shaders;
 vector<Node*> nodes;
 
-
 /// traces a ray in the scene and returns the visible light that comes from that direction
 Color raytrace(Ray ray)
 {
@@ -95,49 +94,44 @@ void createNode(Geometry* geometry, Shader* shader)
 void initializeScene(void)
 {
 	camera = new Camera;
-	camera->yaw = 0;
-	camera->pitch = -30;
+	camera->yaw = 15;
+	camera->pitch = -15;
 	camera->roll = 0;
-	camera->fov = 90;
+	camera->fov = 100;
 	camera->aspect = 4. / 3.0;
-	camera->pos = Vector(0,165,0);
+	camera->pos = Vector(45, 120, -300);
 	
 	camera->beginFrame();
 	
-	lightPos = Vector(-90, 700, 350);
+	lightPos = Vector(-90, 1200, -750);
 	lightColor = Color(1, 1, 1);
-	lightPower = 800000;
-	ambientLight = Color(0.2, 0.2, 0.2);
+	lightPower = 1200000;
+	ambientLight = Color(0.5, 0.5, 0.5);
 	
-	Plane* plane = new Plane(-0.01);
+	Plane* plane = new Plane(-0.01, 200);
 	geometries.push_back(plane);
 	
-	Texture* texture = new BitmapTexture("data/floor.bmp", 0.005);
-	Checker* checker = new Checker(Color(1, 1, 1), Color(0, 0, 0), 35);
+	Texture* texture = new BitmapTexture("data/texture/wood.bmp", 0.0025);
 	Lambert* lambert = new Lambert(Color(1, 1, 1), texture);
 	Node* floor = new Node(plane, lambert);
 	shaders.push_back(lambert);
 	nodes.push_back(floor);
 
-	Texture* world = new BitmapTexture("data/world.bmp", 2);
+	Texture* world = new BitmapTexture("data/world.bmp");
 	
-	Sphere* sphere = new Sphere(Vector(100, 50, 320), 50);
+	Sphere* sphere = new Sphere(Vector(100, 50, 60), 50);
 	Lambert* sphereshader = new Lambert(Color(1,1,1), world);
 	createNode(sphere, sphereshader);
 	
-	
-//	for (int i = 0; i < 3; i++)
-//		createNode(new Cube(Vector(-100, 30, 256 - 50*i), 30), new Lambert(Color(1, 0, 0)));
-
 	CsgOp* diff = new CsgDiff(
-		new Cube(Vector(-100, 60, 200), 100),
-		new Sphere(Vector(-100, 60, 200), 70)
+		new Cube(Vector(-100, 60, -60), 100),
+		new Sphere(Vector(-100, 60, -60), 70)
 	);
 	
 	createNode(diff, new Phong(Color(0.5, 0.5, 0), 60, 1));
 
 	for (int i = 0; i < 3; i++)
-		createNode(new Sphere(Vector(100, 15, 256 - 50*i), 15), new Phong(Color(0, 0, 0.6), 80, 1));
+		createNode(new Sphere(Vector(100, 15, -50*i), 15), new Phong(Color(0, 0, 0.6), 80, 1));
 }
 
 bool needsAA[VFB_MAX_SIZE][VFB_MAX_SIZE];

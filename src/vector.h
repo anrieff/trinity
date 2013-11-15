@@ -90,6 +90,15 @@ struct Vector {
 	{
 		return components[index];
 	}
+	
+	int maxDimension() const
+	{
+		int bi = 0;
+		double maxD = fabs(x);
+		if (fabs(y) > maxD) { maxD = fabs(y); bi = 1; }
+		if (fabs(z) > maxD) { maxD = fabs(z); bi = 2; }
+		return bi;
+	}
 };
 
 inline Vector operator + (const Vector& a, const Vector& b)
@@ -196,6 +205,30 @@ inline std::ostream& operator << (std::ostream& os, const Vector& vec)
 {
 	os << "(" << std::fixed << std::setprecision(3) << vec.x << ", " << vec.y << ", " << vec.z << ")";
 	return os;
+}
+
+/// given an unit vector a, create an orhonormed system (a, b, c). Code is deterministic.
+inline void orthonormedSystem(const Vector& a, Vector& b, Vector& c)
+{
+	Vector temp = Vector(1, 0, 0);
+	if (fabs(dot(a, temp)) > 0.99) {
+		temp = Vector(0, 1, 0);
+		if (fabs(dot(a, temp)) > 0.99)
+			temp = Vector(0, 0, 1);
+	}
+	b = a ^ temp;
+	b.normalize();
+	c = a ^ b;
+	c.normalize();
+}
+
+inline Vector refract(const Vector& i, const Vector& n, float ior)
+{
+	float NdotI = float(dot(i, n));
+	float k = 1 - (ior * ior) * (1 - NdotI * NdotI);
+	if (k < 0)
+		return Vector(0, 0, 0);
+	return ior * i - (ior * NdotI + sqrt(k)) * n;
 }
 
 #endif // __VECTOR3D_H__

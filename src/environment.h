@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2009-2013 by Veselin Georgiev, Slavomir Kaslev et al    *
+ *   Copyright (C) 2009-2012 by Veselin Georgiev, Slavomir Kaslev et al    *
  *   admin@raytracing-bg.net                                               *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -17,31 +17,43 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#ifndef __BITMAP_H__
-#define __BITMAP_H__
+#ifndef __ENVIRONMENT_H__
+#define __ENVIRONMENT_H__
 
 #include "color.h"
+#include "vector.h"
 
-/// @brief a class that represents a bitmap (2d array of colors), e.g. a image
-/// supports loading/saving to BMP
-class Bitmap {
-	int width, height;
-	Color* data;
-public:
-	Bitmap(); //!< Generates an empty bitmap
-	~Bitmap();
-	void freeMem(void); //!< Deletes the memory, associated with the bitmap
-	int getWidth(void) const; //!< Gets the width of the image (X-dimension)
-	int getHeight(void) const; //!< Gets the height of the image (Y-dimension)
-	bool isOK(void) const; //!< Returns true if the bitmap is valid
-	void generateEmptyImage(int width, int height); //!< Creates an empty image with the given dimensions
-	Color getPixel(int x, int y) const; //!< Gets the pixel at coordinates (x, y). Returns black if (x, y) is outside of the image
-	void setPixel(int x, int y, const Color& col); //!< Sets the pixel at coordinates (x, y).
-	
-	bool loadBMP(const char* filename); //!< Loads an image from a BMP file. Returns false in the case of an error
-	bool loadEXR(const char* filename); //!< Loads an EXR file
-	bool loadImage(const char* filename); //!< Loads an image (autodetected)
-	bool saveBMP(const char* filename); //!< Saves the image to a BMP file (with clamping, etc). Returns false in the case of an error (e.g. read-only media)
+enum CubeOrder {
+	NEGX,
+	NEGY,
+	NEGZ,
+	POSX,
+	POSY,
+	POSZ,
 };
 
-#endif // __BITMAP_H__
+class Environment{
+public:
+	virtual ~Environment() {}
+	/// gets a color from the environment at the specified direction
+	virtual Color getEnvironment(const Vector& dir) = 0;
+};
+
+class Bitmap;
+class CubemapEnvironment: public Environment {
+	Bitmap* maps[6];
+	
+	Color getSide(const Bitmap& bmp, double x, double y);
+	bool loadMaps(const char* folder);
+public:
+ 	/// loads a cubemap from 6 separate images, from the specified folder.
+ 	/// The images have to be named "posx.bmp", "negx.bmp", "posy.bmp", ...
+ 	/// (or they may be .exr images, not .bmp).
+ 	/// The folder specification shouldn't include a trailing slash; 
+ 	/// e.g. "/images/cubemaps/cathedral" is OK.
+	CubemapEnvironment(const char* folder);
+	~CubemapEnvironment();
+	Color getEnvironment(const Vector& dir);
+};
+
+#endif // __ENVIRONMENT_H__
