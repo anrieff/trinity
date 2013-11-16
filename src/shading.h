@@ -91,8 +91,12 @@ public:
 };
 
 class Refl: public Shader {
+	double glossiness;
+	int numSamples;
 public:
-	Refl(const Color& filter = Color(1, 1, 1)): Shader(filter) {}
+	Refl(const Color& filter = Color(1, 1, 1), double glossiness = 1.0, 
+		int numSamples = 20):
+		Shader(filter), glossiness(glossiness), numSamples(numSamples) {}
 	Color shade(Ray ray, const IntersectionData& data);
 };
 
@@ -101,6 +105,30 @@ class Refr: public Shader {
 public:
 	Refr(const Color& filter, float ior): Shader(filter), ior(ior) {}
 	Color shade(Ray ray, const IntersectionData& data);
+};
+
+class Layered: public Shader {
+	struct Layer {
+		Shader* shader;
+		Color blend;
+		Texture* texture;
+	};
+	
+	static const int MAX_LAYERS = 32;
+	Layer layers[MAX_LAYERS];
+	int numLayers;
+public:
+	Layered(): Shader(Color(0, 0, 0)) { numLayers = 0; }
+	void addLayer(Shader* shader, const Color& blend, Texture* texture = NULL);
+	
+	Color shade(Ray ray, const IntersectionData& data);
+};
+
+class Fresnel: public Texture {
+	float ior;
+public:
+	Fresnel(float ior) : ior(ior) {}
+	Color getTexColor(const Ray& ray, double u, double v, Vector& normal);
 };
 
 #endif // __SHADING_H__

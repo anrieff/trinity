@@ -136,17 +136,53 @@ Color BitmapTexture::getTexColor(const Ray& ray, double u, double v, Vector& nor
 	return bmp.getPixel(tx, ty); // fetch a single pixel from the bitmap
 }
 
+static void getRandomDiscPoint(double& x, double& y)
+{
+	do {
+		x = randomFloat() * 2 - 1;
+		y = randomFloat() * 2 - 1;
+	} while (x*x + y*y > 1);
+}
+
 Color Refl::shade(Ray ray, const IntersectionData& data)
 {
 	Vector N = faceforward(ray.dir, data.normal);
 	
-	Vector reflected = reflect(ray.dir, N);
-	
-	Ray newRay = ray;
-	newRay.start = data.p + N * 1e-6;
-	newRay.dir = reflected;
-	newRay.depth = ray.depth + 1;
-	return raytrace(newRay) * color;
+	if (glossiness == 1) {
+		Vector reflected = reflect(ray.dir, N);
+		
+		Ray newRay = ray;
+		newRay.start = data.p + N * 1e-6;
+		newRay.dir = reflected;
+		newRay.depth = ray.depth + 1;
+		return raytrace(newRay) * color;
+	} else {
+		Vector a, b;
+		orthonormedSystem(N, a, b);
+		Color result(0, 0, 0);
+		double scaling = tan((1 - glossiness) * PI/2);
+		for (int i = 0; i < numSamples; i++) {
+			Vector reflected;
+			do {
+				double x, y;
+				getRandomDiscPoint(x, y);
+				x *= scaling;
+				y *= scaling;
+				
+				Vector newNormal = N + a * x + b * y;
+				newNormal.normalize();
+				
+				reflected = reflect(ray.dir, newNormal);
+			} while (dot(reflected, N) < 0);
+			
+			Ray newRay = ray;
+			newRay.start = data.p + N * 1e-6;
+			newRay.dir = reflected;
+			newRay.depth = ray.depth + 1;
+			result += raytrace(newRay) * color;
+		}
+		return result / numSamples;
+	}
 }
 
 Color Refr::shade(Ray ray, const IntersectionData& data)
@@ -169,3 +205,46 @@ Color Refr::shade(Ray ray, const IntersectionData& data)
 	newRay.depth = ray.depth + 1;
 	return raytrace(newRay) * color;
 }
+
+void Layered::addLayer(Shader* shader, const Color& blend, Texture* texture)
+{
+	Layer& l = layers[numLayers];
+	l.shader = shader;
+	l.blend = blend;
+	l.texture = texture;
+	numLayers++;
+}
+
+Color Layered::shade(Ray ray, const IntersectionData& data)
+{
+	Color result(0, 0, 0);
+	Vector N = data.normal;
+	for (int i = 0; i < numLayers; i++) {
+		Layer& l = layers[i];
+		Color opacity = l.texture ? 
+			l.texture->getTexColor(ray, data.u, data.v, N) : l.blend; 
+		Color transparency = Color(1, 1, 1) - opacity;
+		result = transparency * result + opacity * l.shader->shade(ray, data);
+	}
+	return result;
+}
+
+static float fresnel(const Vector& i, const Vector& n, float ior)
+{
+	float f = sqr((1.0f - ior) / (1.0f + ior));
+	float NdotI = (float) -dot(n, i);
+	return f + (1.0f - f) * pow(1.0f - NdotI, 5.0f);
+}
+
+
+Color Fresnel::getTexColor(const Ray& ray, double u, double v, Vector& normal)
+{
+	float eta = ior;
+	if (dot(normal, ray.dir) > 0)
+		eta = 1.0f / eta;
+	Vector N = faceforward(ray.dir, normal);
+	float fr = fresnel(ray.dir, N, eta);
+	return Color(fr, fr, fr);
+}
+
+

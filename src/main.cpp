@@ -101,10 +101,10 @@ void createNode(Geometry* geometry, Shader* shader)
 void initializeScene(void)
 {
 	camera = new Camera;
-	camera->yaw = 10;
+	camera->yaw = 5;
 	camera->pitch = -5;
 	camera->roll = 0;
-	camera->fov = 90;
+	camera->fov = 60;
 	camera->aspect = 4. / 3.0;
 	camera->pos = Vector(45, 120, -300);
 	
@@ -119,20 +119,34 @@ void initializeScene(void)
 	geometries.push_back(plane);
 	
 	Texture* texture = new BitmapTexture("data/texture/wood.bmp", 0.0025);
+	Layered* planeShader = new Layered;
+
 	Lambert* lambert = new Lambert(Color(1, 1, 1), texture);
-	Node* floor = new Node(plane, lambert);
+	planeShader->addLayer(lambert, Color(1, 1, 1));
+	planeShader->addLayer(new Refl, Color(0.05, 0.05, 0.05), new Fresnel(1.33));
+	Node* floor = new Node(plane, planeShader);
 	shaders.push_back(lambert);
 	nodes.push_back(floor);
 
 	Texture* world = new BitmapTexture("data/world.bmp");
 	
-	Sphere* sphere = new Sphere(Vector(100, 50, 60), 50);
-	Shader* sphereshader = new Refr(Color(0.8, 0.9, 0.8), 1.6f);
-	createNode(sphere, sphereshader);
+	Layered* glass = new Layered;
+	
+	glass->addLayer(new Refr(Color(0.9, 0.9, 0.9), 1.6), Color(1, 1, 1));
+	glass->addLayer(new Refl(Color(0.9, 0.9, 0.9)), Color(1, 1, 1), 
+		new Fresnel(1.6));
 	
 	createNode(
 		new Cube(Vector(-100, 60, -60), 100),
-		new Refr(Color(0.9, 0.9, 0.9), 1.6));
+		glass
+	);
+	Sphere* sphere = new Sphere(Vector(100, 50, 60), 50);
+	Shader* sphereshader = new Refr(Color(0.8, 0.9, 0.8), 1.6f);
+	
+	Shader* glossy = new Refl(Color(0.9, 1.0, 0.9), 0.6, 50);
+	
+	createNode(sphere, glossy);
+	
 	
 //	createNode(diff, new Phong(Color(0.5, 0.5, 0), 60, 1));
 	
@@ -168,9 +182,12 @@ void renderScene(void)
 	int H = frameHeight();
 	
 	// first pass: shoot just one ray per pixel
-	for (int y = 0; y < H; y++)
-		for (int x = 0; x < W; x++)
+	for (int y = 0; y < H; y++) {
+		for (int x = 0; x < W; x++) 
 			vfb[y][x] = raytrace(camera->getScreenRay(x, y));
+		if (y % 10 == 0)
+			displayVFB(vfb);
+	}
 
 	// second pass: find pixels, that need anti-aliasing, by analyzing their neighbours
 	for (int y = 0; y < H; y++) {
@@ -226,6 +243,8 @@ void renderScene(void)
 					vfb[y][x] = result / 5.0f;
 				}
 			}
+			if (y % 10 == 0)
+				displayVFB(vfb);
 		}
 	}
 }
