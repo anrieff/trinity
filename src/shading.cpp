@@ -164,7 +164,8 @@ Color Refl::shade(Ray ray, const IntersectionData& data)
 		orthonormedSystem(N, a, b);
 		Color result(0, 0, 0);
 		double scaling = tan((1 - glossiness) * PI/2);
-		for (int i = 0; i < numSamples; i++) {
+		int samplesWanted = ray.depth == 0 ? numSamples : 5;
+		for (int i = 0; i < samplesWanted; i++) {
 			Vector reflected;
 			do {
 				double x, y;
@@ -184,7 +185,7 @@ Color Refl::shade(Ray ray, const IntersectionData& data)
 			newRay.depth = ray.depth + 1;
 			result += raytrace(newRay) * color;
 		}
-		return result / numSamples;
+		return result / samplesWanted;
 	}
 }
 

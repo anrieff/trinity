@@ -132,7 +132,7 @@ void initializeScene(void)
 
 	/* Create a glossy sphere */
 	Sphere* sphere = new Sphere(Vector(100, 50, 60), 50);
-	Shader* glossy = new Refl(Color(0.9, 1.0, 0.9), 0.97, 25);
+	Shader* glossy = new Refl(Color(0.9, 1.0, 0.9), 0.97, 120);
 	
 	createNode(sphere, glossy);
 	
