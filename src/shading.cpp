@@ -136,12 +136,14 @@ Color BitmapTexture::getTexColor(const Ray& ray, double u, double v, Vector& nor
 	return bmp.getPixel(tx, ty); // fetch a single pixel from the bitmap
 }
 
-static void getRandomDiscPoint(double& x, double& y)
+void Refl::getRandomDiscPoint(double& x, double& y)
 {
-	do {
-		x = randomFloat() * 2 - 1;
-		y = randomFloat() * 2 - 1;
-	} while (x*x + y*y > 1);
+	// pick a random point in the unit disc with uniform probability.
+	// note the sqrt(). For explanation why it is needed, see http://mathworld.wolfram.com/DiskPointPicking.html
+	double theta = randomFloat() * 2 * PI;
+	double rho = sqrt(randomFloat());
+	x = rho * cos(theta);
+	y = rho * sin(theta);
 }
 
 Color Refl::shade(Ray ray, const IntersectionData& data)

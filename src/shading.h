@@ -93,6 +93,7 @@ public:
 class Refl: public Shader {
 	double glossiness;
 	int numSamples;
+	static void getRandomDiscPoint(double& x, double& y);
 public:
 	Refl(const Color& filter = Color(1, 1, 1), double glossiness = 1.0, 
 		int numSamples = 20):
