@@ -102,6 +102,14 @@ struct Color {
 		b /= divider;
 	}
 	
+	void adjustSaturation(float amount) // 0 = desaturate; 1 = don't change
+	{
+		float mid = intensity();
+		r = r * amount + mid * (1 - amount);
+		g = g * amount + mid * (1 - amount);
+		b = b * amount + mid * (1 - amount);
+	}
+	
 	inline const float& operator[] (int index) const
 	{
 		return components[index];

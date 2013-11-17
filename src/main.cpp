@@ -115,43 +115,32 @@ void initializeScene(void)
 	lightPower = 1200000;
 	ambientLight = Color(0.5, 0.5, 0.5);
 	
+	/* Create a floor node, with a layered shader: perfect reflection on top of woody diffuse */
 	Plane* plane = new Plane(-0.01, 200);
-	geometries.push_back(plane);
-	
 	Texture* texture = new BitmapTexture("data/texture/wood.bmp", 0.0025);
-	Layered* planeShader = new Layered;
-
 	Lambert* lambert = new Lambert(Color(1, 1, 1), texture);
+	Layered* planeShader = new Layered;
 	planeShader->addLayer(lambert, Color(1, 1, 1));
 	planeShader->addLayer(new Refl, Color(0.05, 0.05, 0.05), new Fresnel(1.33));
-	Node* floor = new Node(plane, planeShader);
-	shaders.push_back(lambert);
-	nodes.push_back(floor);
+	createNode(plane, planeShader);
 
-	Texture* world = new BitmapTexture("data/world.bmp");
-	
 	Layered* glass = new Layered;
+	glass->addLayer(new Refr(Color(0.97, 0.97, 0.97), 1.6), Color(1, 1, 1));
+	glass->addLayer(new Refl(Color(0.97, 0.97, 0.97)), Color(1, 1, 1), new Fresnel(1.6));
 	
-	glass->addLayer(new Refr(Color(0.9, 0.9, 0.9), 1.6), Color(1, 1, 1));
-	glass->addLayer(new Refl(Color(0.9, 0.9, 0.9)), Color(1, 1, 1), 
-		new Fresnel(1.6));
-	
-	createNode(
-		new Cube(Vector(-100, 60, -60), 100),
-		glass
-	);
+	createNode(new Sphere(Vector(-60, 36, 10), 36), glass);
+
+	/* Create a glossy sphere */
 	Sphere* sphere = new Sphere(Vector(100, 50, 60), 50);
-	Shader* sphereshader = new Refr(Color(0.8, 0.9, 0.8), 1.6f);
-	
-	Shader* glossy = new Refl(Color(0.9, 1.0, 0.9), 0.6, 50);
+	Shader* glossy = new Refl(Color(0.9, 1.0, 0.9), 0.97, 25);
 	
 	createNode(sphere, glossy);
 	
-	
-//	createNode(diff, new Phong(Color(0.5, 0.5, 0), 60, 1));
-	
+	Color colors[3] = { Color(1, 0, 0), Color(1, 1, 0), Color(0, 1, 0) };
+	// desaturat a bit:
+	for (int i = 0; i < 3; i++) colors[i].adjustSaturation(0.9f);
 	for (int i = 0; i < 3; i++)
-		createNode(new Sphere(Vector(80, 15, -100+50*i), 15), new Refr(Color(0.99, 0.99, 0.99), 1.0 + i * 0.2));
+		createNode(new Sphere(Vector(10 + 32*i, 15, 0), 15), new Phong(colors[i]*0.75, 32));
 		
 	environment = new CubemapEnvironment("data/env/forest");
 }

@@ -138,8 +138,9 @@ Color BitmapTexture::getTexColor(const Ray& ray, double u, double v, Vector& nor
 
 void Refl::getRandomDiscPoint(double& x, double& y)
 {
-	// pick a random point in the unit disc with uniform probability.
-	// note the sqrt(). For explanation why it is needed, see http://mathworld.wolfram.com/DiskPointPicking.html
+	// pick a random point in the unit disc with uniform probability by using polar coords.
+	// Note the sqrt(). For explanation why it's needed, see 
+	// http://mathworld.wolfram.com/DiskPointPicking.html
 	double theta = randomFloat() * 2 * PI;
 	double rho = sqrt(randomFloat());
 	x = rho * cos(theta);

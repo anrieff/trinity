@@ -57,6 +57,7 @@ public:
 	 */
 	virtual bool intersect(Ray ray, IntersectionData& data) = 0;
 	virtual const char* getName() = 0; //!< a virtual function, which returns the name of a geometry
+	virtual bool isInside(const Vector& p) const = 0; //!< check whether a point p is inside the geometry.
 };
 
 class Plane: public Geometry {
@@ -67,6 +68,7 @@ public:
 	
 	bool intersect(Ray ray, IntersectionData& data);
 	const char* getName() { return "Plane"; }
+	bool isInside(const Vector& p) const { return false; }
 };
 
 class Sphere: public Geometry {
@@ -77,6 +79,7 @@ public:
 	
 	bool intersect(Ray ray, IntersectionData& data);
 	const char* getName() { return "Sphere"; }
+	bool isInside(const Vector& p) const { return (center - p).lengthSqr() < R*R; }
 };
 
 class Cube: public Geometry {
@@ -88,9 +91,15 @@ public:
 
 	bool intersect(Ray ray, IntersectionData& data);	
 	const char* getName() { return "Cube"; }
+	bool isInside(const Vector& p) const { 
+		return (fabs(p.x - center.x) <= side * 0.5 &&
+				fabs(p.y - center.y) <= side * 0.5 &&
+				fabs(p.z - center.z) <= side * 0.5);
+	}
 };
 
 class CsgOp: public Geometry {
+protected:
 	Geometry *left, *right;
 	void findAllIntersections(Geometry* geom, Ray ray, std::vector<IntersectionData>& l);
 public:
@@ -98,22 +107,25 @@ public:
 	
 	bool intersect(Ray ray, IntersectionData& data);	
 	
-	virtual bool boolOp(bool inLeft, bool inRight) = 0;
+	virtual bool boolOp(bool inLeft, bool inRight) const = 0;
+	bool isInside(const Vector& p) const { return boolOp(left->isInside(p), right->isInside(p)); }
 };
 
 class CsgUnion: public CsgOp {
 public:
 	CsgUnion(Geometry* left, Geometry* right): CsgOp(left, right) {}
 	
-	bool boolOp(bool inLeft, bool inRight) { return inLeft || inRight; }
+	bool boolOp(bool inLeft, bool inRight) const { return inLeft || inRight; }
 	const char* getName() { return "CsgUnion"; }
 };
 
 class CsgDiff: public CsgOp {
 public:
 	CsgDiff(Geometry* left, Geometry* right): CsgOp(left, right) {}
+
+	bool intersect(Ray ray, IntersectionData& data); // override the generic intersector to handle a corner case
 	
-	bool boolOp(bool inLeft, bool inRight) { return inLeft && !inRight; }
+	bool boolOp(bool inLeft, bool inRight) const { return inLeft && !inRight; }
 	const char* getName() { return "CsgDiff"; }
 };
 
@@ -121,7 +133,7 @@ class CsgInter: public CsgOp {
 public:
 	CsgInter(Geometry* left, Geometry* right): CsgOp(left, right) {}
 	
-	bool boolOp(bool inLeft, bool inRight) { return inLeft && inRight; }
+	bool boolOp(bool inLeft, bool inRight) const { return inLeft && inRight; }
 	const char* getName() { return "CsgInter"; }
 };
 
