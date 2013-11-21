@@ -20,6 +20,7 @@
 #ifndef __BITMAP_H__
 #define __BITMAP_H__
 
+#include <functional>
 #include "color.h"
 
 /// @brief a class that represents a bitmap (2d array of colors), e.g. a image
@@ -28,6 +29,8 @@ class Bitmap {
 protected:
 	int width, height;
 	Color* data;
+	
+	void remapRGB(std::function<float(float)>); // remap R, G, B channels by a function
 public:
 	Bitmap(); //!< Generates an empty bitmap
 	~Bitmap();
@@ -43,6 +46,9 @@ public:
 	bool loadEXR(const char* filename); //!< Loads an EXR file
 	virtual bool loadImage(const char* filename); //!< Loads an image (autodetected)
 	bool saveBMP(const char* filename); //!< Saves the image to a BMP file (with clamping, etc). Returns false in the case of an error (e.g. read-only media)
+	
+	void decompressGamma_sRGB(void); //!< assuming the pixel data is in sRGB, decompress to linear RGB values
+	void decompressGamma(float gamma); //!< as above, but assume a specific gamma value
 };
 
 #endif // __BITMAP_H__

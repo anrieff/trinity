@@ -64,7 +64,14 @@ class BitmapTexture: public Texture {
 	Bitmap bmp;
 	double scaling;
 public:
-	BitmapTexture(const char* fileName, double scaling = 1);
+	/// load a bitmap texture from file
+	/// @param fileName: the path to the bitmap file. Can be .bmp or .exr
+	/// @param scaling:  scaling for the input (u, v) coords. Larger values SHRINK the texture on-screen
+	/// @param assumedGamma: assumed gamma compression of the input image.
+	///     if assumedGamma == 1, no gamma decompression is done.
+	///     if assumedGamma == 2.2 (a special value) - sRGB decompression is done.
+	///     otherwise, gamma decompression with the given power is performed
+	BitmapTexture(const char* fileName, double scaling = 1, float assumedGamma = 2.2f);
 	Color getTexColor(const Ray& ray, double u, double v, Vector& normal);
 	
 };
