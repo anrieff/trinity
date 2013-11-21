@@ -226,7 +226,7 @@ void displayBitmap(const Bitmap& bmp, const char* msg = NULL)
 					case SDL_BUTTON_WHEELUP:
 						cMult++;
 						break;
-					case SDL_BUTTON_WHEELUP:
+					case SDL_BUTTON_WHEELDOWN:
 						cMult--;
 						break;
 					default:

@@ -150,6 +150,12 @@ inline Vector operator / (const Vector& a, double divider)
 	return Vector(a.x * multiplier, a.y * multiplier, a.z * multiplier);
 }
 
+inline Vector normalize(const Vector& vec)
+{
+	double multiplier = 1.0 / vec.length();
+	return vec * multiplier;
+}
+
 inline Vector reflect(const Vector& ray, const Vector& norm)
 {
 	Vector result = ray - 2 * dot(ray, norm) * norm;

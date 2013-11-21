@@ -20,6 +20,7 @@
 #ifndef __BITMAPEXT_H__
 #define __BITMAPEXT_H__
 
+#include <functional>
 #include "bitmap.h"
 
 // overloads the base class Bitmap, adding rescaling, and load/save to a few other file formats
@@ -62,6 +63,7 @@ class EnvironmentConverter {
 	
 	void convertCubemapToSpherical(int outSize);
 	void convertSphericalToCubemap(int outSize);
+	void projectCubeSide(BitmapExt& bmp, std::function<Vector(double, double)> mapSideToDir, int idx);
 public:
 	EnvironmentConverter();
 	~EnvironmentConverter();

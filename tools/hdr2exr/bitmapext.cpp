@@ -28,6 +28,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <functional>
 #include "color.h"
 #include "bitmapext.h"
 #include "environment.h"
@@ -356,7 +357,7 @@ void EnvironmentConverter::convertCubemapToSpherical(int outSize)
 	}
 
 	newMap->generateEmptyImage(outSize, outSize / 2);
-	int SUPERSAMPLES = 4; // actual number of samples is the square of that number.
+	const int SUPERSAMPLES = 4; // actual number of samples is the square of that number.
 	int W = newMap->getWidth();
 	Color* data = newMap->getData();
 	
@@ -406,32 +407,39 @@ void EnvironmentConverter::convertCubemapToSpherical(int outSize)
 	maps[0] = newMap;
 }
 
-void EnvironmentConverter::projectCubeSide(BitmapExt& bmp, Vector (*mapSideToDir) (double x, double y), int idx)
+void EnvironmentConverter::projectCubeSide(BitmapExt& bmp, std::function<Vector(double, double)> mapSideToDir, int idx)
 {
 	int S = bmp.getWidth();
+	Color* data = bmp.getData();
+	const int SUPERSAMPLES = 4; // actual number of samples is the square of that number.
 	for (int y = 0; y < S; y++) {
 		for (int yss = 0; yss < SUPERSAMPLES; yss++) {
 			printf("\rConverting SphericalMap->CubeMap[%s]... %6.2lf%%", CubeOrderNames[idx], (y * SUPERSAMPLES + yss) * 100.0 / (S * SUPERSAMPLES));
 			fflush(stdout);
 			double py = (y * SUPERSAMPLES + yss) / (double) (S * SUPERSAMPLES - 1); // [0..1]
 			py = (py - 0.5) * 2; // [-1..1]
-			for (int x = 0; x < outSize; x++) {
+			for (int x = 0; x < S; x++) {
 				for (int xss = 0; xss < SUPERSAMPLES; xss++) {
 					double px = (x * SUPERSAMPLES + xss) / (double) (S * SUPERSAMPLES - 1); // [0..1]
 					px = (px - 0.5) * 2; // [-1..1]
 					Vector dir = mapSideToDir(px, py);
+					dir.normalize();
 					double theta = acos(dir.y); // [0..PI]
 					double phi = atan2(dir.z, dir.x); // [-PI..PI]
 					
-					theta = -theta / PI; // [0..1]
+					theta = theta / PI; // [0..1]
 					phi   = -(phi + PI/2 + 2*PI) / (2 * PI);
 					phi  -= floor(phi); // [0..1]
-					data[y * W + x] += maps[0]->getPixel((int) (phi * maps[0]->getWidth()), (int) (theta * maps[0]->getHeight()));
+					data[y * S + x] += maps[0]->getPixel((int) (phi * maps[0]->getWidth()), (int) (theta * maps[0]->getHeight()));
 				}
 			}
 		}
 	}
-	printf("\rConverted: SphericalMap->CubeMap                    \n");
+	printf("\rConverted: SphericalMap->CubeMap[%s]                   \n", CubeOrderNames[idx]);
+	float mult = 1.0f / (SUPERSAMPLES * SUPERSAMPLES);
+	for (int y = 0; y < S; y++)
+		for (int x = 0; x < S; x++)
+			data[y * S + x] *= mult;
 }
 
 void EnvironmentConverter::convertSphericalToCubemap(int outSize)
@@ -442,17 +450,23 @@ void EnvironmentConverter::convertSphericalToCubemap(int outSize)
 		// auto-calculate the cubemap size; size is vertial_of_spheremap / 2
 		outSize = maps[0]->getHeight() / 2;
 	}
-	for (int i = 0; i < 6; i++)
+	for (int i = 0; i < 6; i++) {
+		newMaps[i] = new BitmapExt;
 		newMaps[i]->generateEmptyImage(outSize, outSize);
+	}
 	//
-	#define RESAMPLE_SIDE(side) projectCubeSide(*newMaps[side], mapSideToDir##side, side)
-		
-	RESAMPLE_SIDE(NEGX);
-	RESAMPLE_SIDE(NEGY);
-	RESAMPLE_SIDE(NEGZ);
-	RESAMPLE_SIDE(POSX);
-	RESAMPLE_SIDE(POSY);
-	RESAMPLE_SIDE(POSZ);
+	// a set of functions, to convert 2D parameters (coordinates on a cube side) onto a 3D point
+	// (a point on the cube on the respective side)
+	std::function<Vector(double, double)> remapFunctions[6] = {
+		[] (double x, double y) { return Vector(-1, -y,  x); }, // NEGX side
+		[] (double x, double y) { return Vector( x, -1, -y); }, // NEGY side
+		[] (double x, double y) { return Vector( x,  y, -1); }, // NEGZ side
+		[] (double x, double y) { return Vector(+1, -y, -x); }, // POSX side
+		[] (double x, double y) { return Vector( x, +1,  y); }, // POSY side
+		[] (double x, double y) { return Vector( x, -y, +1); }, // POSZ side
+	};
+	for (int side = NEGX; side <= POSZ; side++)
+		projectCubeSide(*newMaps[side], remapFunctions[side], side);
 	
 	// destroy old maps:
 	for (int i = 0; i < numMaps; i++)
