@@ -406,6 +406,61 @@ void EnvironmentConverter::convertCubemapToSpherical(int outSize)
 	maps[0] = newMap;
 }
 
+void EnvironmentConverter::projectCubeSide(BitmapExt& bmp, Vector (*mapSideToDir) (double x, double y), int idx)
+{
+	int S = bmp.getWidth();
+	for (int y = 0; y < S; y++) {
+		for (int yss = 0; yss < SUPERSAMPLES; yss++) {
+			printf("\rConverting SphericalMap->CubeMap[%s]... %6.2lf%%", CubeOrderNames[idx], (y * SUPERSAMPLES + yss) * 100.0 / (S * SUPERSAMPLES));
+			fflush(stdout);
+			double py = (y * SUPERSAMPLES + yss) / (double) (S * SUPERSAMPLES - 1); // [0..1]
+			py = (py - 0.5) * 2; // [-1..1]
+			for (int x = 0; x < outSize; x++) {
+				for (int xss = 0; xss < SUPERSAMPLES; xss++) {
+					double px = (x * SUPERSAMPLES + xss) / (double) (S * SUPERSAMPLES - 1); // [0..1]
+					px = (px - 0.5) * 2; // [-1..1]
+					Vector dir = mapSideToDir(px, py);
+					double theta = acos(dir.y); // [0..PI]
+					double phi = atan2(dir.z, dir.x); // [-PI..PI]
+					
+					theta = -theta / PI; // [0..1]
+					phi   = -(phi + PI/2 + 2*PI) / (2 * PI);
+					phi  -= floor(phi); // [0..1]
+					data[y * W + x] += maps[0]->getPixel((int) (phi * maps[0]->getWidth()), (int) (theta * maps[0]->getHeight()));
+				}
+			}
+		}
+	}
+	printf("\rConverted: SphericalMap->CubeMap                    \n");
+}
+
 void EnvironmentConverter::convertSphericalToCubemap(int outSize)
 {
+	BitmapExt** newMaps = new BitmapExt* [6];
+	
+	if (outSize == -1) {
+		// auto-calculate the cubemap size; size is vertial_of_spheremap / 2
+		outSize = maps[0]->getHeight() / 2;
+	}
+	for (int i = 0; i < 6; i++)
+		newMaps[i]->generateEmptyImage(outSize, outSize);
+	//
+	#define RESAMPLE_SIDE(side) projectCubeSide(*newMaps[side], mapSideToDir##side, side)
+		
+	RESAMPLE_SIDE(NEGX);
+	RESAMPLE_SIDE(NEGY);
+	RESAMPLE_SIDE(NEGZ);
+	RESAMPLE_SIDE(POSX);
+	RESAMPLE_SIDE(POSY);
+	RESAMPLE_SIDE(POSZ);
+	
+	// destroy old maps:
+	for (int i = 0; i < numMaps; i++)
+		delete maps[i];
+	delete[] maps;
+	
+	// set new fmt:
+	format = DIR;
+	numMaps = 6;
+	maps = newMaps;
 }
