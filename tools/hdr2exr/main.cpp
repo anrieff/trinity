@@ -223,10 +223,10 @@ void displayBitmap(const Bitmap& bmp, const char* msg = NULL)
 			case SDL_MOUSEBUTTONDOWN:
 			{
 				switch (ev.button.button) {
-					case 4:
+					case SDL_BUTTON_WHEELUP:
 						cMult++;
 						break;
-					case 5:
+					case SDL_BUTTON_WHEELUP:
 						cMult--;
 						break;
 					default:
