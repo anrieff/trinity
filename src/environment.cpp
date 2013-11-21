@@ -48,15 +48,26 @@ CubemapEnvironment::CubemapEnvironment(const char* folder)
 {
 	memset(maps, 0, sizeof(maps));
 	loadMaps(folder);
+	owned = true;
 }
+
+CubemapEnvironment::CubemapEnvironment(Bitmap** inputmaps)
+{
+	for (int i = 0; i < 6; i++) maps[i] = inputmaps[i];
+	owned = false;
+}
+
 
 CubemapEnvironment::~CubemapEnvironment()
 {
-	for (int i = 0; i < 6; i++)
-		if (maps[i]) {
-			delete maps[i];
-			maps[i] = NULL;
+	if (owned) {
+		for (int i = 0; i < 6; i++) {
+			if (maps[i]) {
+				delete maps[i];
+				maps[i] = NULL;
+			}
 		}
+	}
 }
 
 // a helper function (see getEnvironment()) that accepts two coordinates within the square
@@ -90,8 +101,9 @@ Color CubemapEnvironment::getEnvironment(const Vector& indir)
 	switch (state) {
 		// for each case, we have to use the other two dimensions as coordinates within the bitmap for
 		// that side. The ordering of plusses and minuses is specific for the arrangement of
-		// bitmaps we use (and seems to be the standard one for OpenGL). Other cubemap textures might need other
-		// arrangements
+		// bitmaps we use (the orientations are specific for vertical-cross type format, where each
+		// cube side is taken verbatim from a 3:4 image of V-cross environment texture.
+		
 		// In every case, the other two coordinates are real numbers in the square (-1, -1)..(+1, +1)
 		// We use the getSide() helper function, to convert these coordinates to texture coordinates and fetch
 		// the color value from the bitmap.

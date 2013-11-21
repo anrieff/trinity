@@ -24,6 +24,13 @@
 #include <string>
 using namespace std;
 
+string upCaseString(string s)
+{
+	for (int i = 0; i < (int) s.length(); i++)
+		s[i] = toupper(s[i]);
+	return s;
+}
+
 string extensionUpper(const char* fileName)
 {
 	int l = (int) strlen(fileName);

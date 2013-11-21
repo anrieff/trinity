@@ -17,42 +17,25 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-#ifndef __BITMAP_H__
-#define __BITMAP_H__
+#ifndef __BITMAPEXT_H__
+#define __BITMAPEXT_H__
 
-#include <stdio.h>
-#include "color.h"
+#include "bitmap.h"
 
-/// @brief a class that represents a bitmap (2d array of colors), e.g. a image
-/// supports loading/saving to BMP
-class Bitmap {
-	int width, height;
-	Color* data;
-	
+// overloads the base class Bitmap, adding rescaling, and load/save to a few other file formats
+class BitmapExt: public Bitmap {
 	bool tryLoadPFM(FILE* f);
 public:
-	Bitmap(); //!< Generates an empty bitmap
-	~Bitmap();
-	void freeMem(void); //!< Deletes the memory, associated with the bitmap
-	int getWidth(void) const; //!< Gets the width of the image (X-dimension)
-	int getHeight(void) const; //!< Gets the height of the image (Y-dimension)
-	bool isOK(void) const; //!< Returns true if the bitmap is valid
-	void generateEmptyImage(int width, int height); //!< Creates an empty image with the given dimensions
-	Color getPixel(int x, int y) const; //!< Gets the pixel at coordinates (x, y). Returns black if (x, y) is outside of the image
-	void setPixel(int x, int y, const Color& col); //!< Sets the pixel at coordinates (x, y).
-	Color* getData() { return data; }
-	
 	/// scale the bitmap down, so that the maximum of the new (width, height) becomes newMaxDim.
 	/// the rescaling is uniform. If the bitmap is already smaller than the prescribed size, it is left unchanged.
 	void rescale(int newMaxDim);
 	
-	bool loadImageFile(const char* filename); //!< Loads an image (autodetected format)
-	bool loadBMP(const char* filename); //!< Loads an image from a BMP file. Returns false in the case of an error
-	bool loadEXR(const char* filename); //!< Loads an EXR file
+	Color* getData() { return data; }
+	
+	virtual bool loadImage(const char* filename); //!< Loads an image (autodetected format)
 	bool loadHDR(const char* filename); //!< Loads a HDR-format file
 	bool loadPFM(const char* filename); //!< Loads a PFM-format file
 	
-	bool saveBMP(const char* filename); //!< Saves the image to a BMP file (with clamping, etc). Returns false in the case of an error (e.g. read-only media)
 	bool saveEXR(const char* filename); //!< Saves the image into the EXR format, preserving the dynamic range, using Half for storage.
 };
 
@@ -66,34 +49,29 @@ enum Format {
 	UNDEFINED,
 };
 
-enum CubeOrder {
-	NEGX,
-	NEGY,
-	NEGZ,
-	POSX,
-	POSY,
-	POSZ,
-};
-
 extern const char* CubeOrderNames[6];
 
-class Environment {
-	Bitmap** maps;
+class Vector;
+class EnvironmentConverter {
+	BitmapExt** maps;
 	int numMaps;
 	Format format;
 	
-	Environment(const Environment&) = delete;
-	Environment& operator = (const Environment&) = delete;
+	EnvironmentConverter(const EnvironmentConverter&) = delete;
+	EnvironmentConverter& operator = (const EnvironmentConverter&) = delete;
+	
+	void convertCubemapToSpherical(int outSize);
+	void convertSphericalToCubemap(int outSize);
 public:
-	Environment();
-	~Environment();
+	EnvironmentConverter();
+	~EnvironmentConverter();
 	
 	bool load(const char* filename, Format inputFormat);
 	bool save(const char* filename);
 	void convert(Format targetFormat, int outSize);
 	void multiply(float mult);
 	
-	Bitmap& getMap(int index) { return *maps[index]; }
+	BitmapExt& getMap(int index) { return *maps[index]; }
 };
 
-#endif // __BITMAP_H__
+#endif // __BITMAPEXT_H__

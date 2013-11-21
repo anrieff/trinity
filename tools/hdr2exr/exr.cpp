@@ -23,37 +23,10 @@
 #include <ImfArray.h>
 #include <Iex.h>
 #include <vector>
-#include "bitmap.h"
+#include "bitmapext.h"
 
-bool Bitmap::loadEXR(const char* filename)
-{
-	try {
-		Imf::RgbaInputFile exr(filename);
-		Imf::Array2D<Imf::Rgba> pixels;
-		Imath::Box2i dw = exr.dataWindow();
-		width  = dw.max.x - dw.min.x + 1;
-		height = dw.max.y - dw.min.y + 1;
-		pixels.resizeErase(height, width);
-		exr.setFrameBuffer(&pixels[0][0] - dw.min.x - dw.min.y * width, 1, width);
-		exr.readPixels(dw.min.y, dw.max.y);
-		data = new Color[width * height];
-		for (int y = 0; y < height; y++)
-			for (int x = 0; x < width; x++) {
-				Color& pixel = data[y * width + x];
-				pixel.r = pixels[y + dw.min.y][x + dw.min.x].r;
-				pixel.g = pixels[y + dw.min.y][x + dw.min.x].g;
-				pixel.b = pixels[y + dw.min.y][x + dw.min.x].b;
-			}
-		return true;
-	}
-	catch (Iex::BaseExc ex) {
-		width = height = 0;
-		data = NULL;
-		return false;
-	}
-}
 
-bool Bitmap::saveEXR(const char* filename)
+bool BitmapExt::saveEXR(const char* filename)
 {
 	try {
 		Imf::RgbaOutputFile file(filename, width, height, Imf::WRITE_RGBA);

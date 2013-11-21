@@ -35,6 +35,17 @@ inline int nearestInt(float x) { return (int) floor(x + 0.5f); }
 /// This is not a very good implementation. A better method is to be employed soon.
 inline float randomFloat() { return rand() / (float) RAND_MAX; }
 
+std::string upCaseString(std::string s); //!< returns the string in UPPERCASE
 std::string extensionUpper(const char* fileName); //!< Given a filename, return its extension in UPPERCASE
+
+/// a simple RAII class for FILE* pointers.
+class FileRAII {
+        FILE* held;
+public:
+        FileRAII(FILE* init): held(init) {}
+        ~FileRAII() { if (held) fclose(held); held = NULL; }
+        FileRAII(const FileRAII&) = delete;
+        FileRAII& operator = (const FileRAII&) = delete;
+};
 
 #endif // __UTIL_H__

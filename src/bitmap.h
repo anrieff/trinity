@@ -25,6 +25,7 @@
 /// @brief a class that represents a bitmap (2d array of colors), e.g. a image
 /// supports loading/saving to BMP
 class Bitmap {
+protected:
 	int width, height;
 	Color* data;
 public:
@@ -40,7 +41,7 @@ public:
 	
 	bool loadBMP(const char* filename); //!< Loads an image from a BMP file. Returns false in the case of an error
 	bool loadEXR(const char* filename); //!< Loads an EXR file
-	bool loadImage(const char* filename); //!< Loads an image (autodetected)
+	virtual bool loadImage(const char* filename); //!< Loads an image (autodetected)
 	bool saveBMP(const char* filename); //!< Saves the image to a BMP file (with clamping, etc). Returns false in the case of an error (e.g. read-only media)
 };
 

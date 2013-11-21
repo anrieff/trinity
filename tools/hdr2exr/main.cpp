@@ -32,7 +32,7 @@
 #include <SDL/SDL.h>
 #include <string>
 #include "util.h"
-#include "bitmap.h"
+#include "bitmapext.h"
 using namespace std;
 
 const char* USAGE = ""
@@ -220,6 +220,20 @@ void displayBitmap(const Bitmap& bmp, const char* msg = NULL)
 				}
 				break;
 			}
+			case SDL_MOUSEBUTTONDOWN:
+			{
+				switch (ev.button.button) {
+					case 4:
+						cMult++;
+						break;
+					case 5:
+						cMult--;
+						break;
+					default:
+						break;
+				}
+				break;
+			}
 			default:
 				break;
 		}
@@ -233,7 +247,7 @@ int main(int argc, char** argv)
 		printf("%s", USAGE);
 		return 1;
 	}
-	Environment env;
+	EnvironmentConverter env;
 	if (!env.load(inFile.c_str(), inFmt)) {
 		printf("Cannot load input environment `%s'\n", inFile.c_str());
 		return 2;
@@ -249,7 +263,7 @@ int main(int argc, char** argv)
 			printf("Error: displaying an image cannot be done in a format other than spherical!\n");
 			return 3;
 		}
-		Bitmap& img = env.getMap(0);
+		BitmapExt& img = env.getMap(0);
 		int oldW = img.getWidth(), oldH = img.getHeight();
 		// rescale to fit screen:
 		img.rescale(outSize > 0 ? outSize : 1024);

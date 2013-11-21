@@ -42,6 +42,7 @@ public:
 class Bitmap;
 class CubemapEnvironment: public Environment {
 	Bitmap* maps[6];
+	bool owned;
 	
 	Color getSide(const Bitmap& bmp, double x, double y);
 	bool loadMaps(const char* folder);
@@ -52,6 +53,10 @@ public:
  	/// The folder specification shouldn't include a trailing slash; 
  	/// e.g. "/images/cubemaps/cathedral" is OK.
 	CubemapEnvironment(const char* folder);
+	
+	/// initialize from 6 bitmaps. In this case, the class won't take "ownership" of the
+	/// 6 Bitmap objects; they won't be freed in ~CubemapEnvironment.
+	CubemapEnvironment(Bitmap** maps);
 	~CubemapEnvironment();
 	Color getEnvironment(const Vector& dir);
 };

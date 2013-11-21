@@ -18,13 +18,13 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include "bitmap.h"
+#include "bitmapext.h"
 #include "rgbe.h"
 #include "util.h"
 #include <vector>
 using std::vector;
 
-bool Bitmap::loadHDR(const char* filename)
+bool BitmapExt::loadHDR(const char* filename)
 {
 	FILE* fp = fopen(filename, "rb");
 	if (!fp) return false;

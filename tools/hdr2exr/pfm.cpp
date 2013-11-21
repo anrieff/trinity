@@ -22,7 +22,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <algorithm>
-#include "bitmap.h"
+#include "bitmapext.h"
 using std::swap;
 
 static bool scanToNextWS(char data[], char res[], int& curIdx, int maxLen)
@@ -38,7 +38,7 @@ static bool scanToNextWS(char data[], char res[], int& curIdx, int maxLen)
 	return true;
 }
 
-bool Bitmap::tryLoadPFM(FILE* f)
+bool BitmapExt::tryLoadPFM(FILE* f)
 {
 	char data[128], s[128];
 	/* 
@@ -93,7 +93,7 @@ bool Bitmap::tryLoadPFM(FILE* f)
 }
 
 
-bool Bitmap::loadPFM(const char* filename)
+bool BitmapExt::loadPFM(const char* filename)
 {
 	FILE* f = fopen(filename, "rb");
 	if (!f) return false;
