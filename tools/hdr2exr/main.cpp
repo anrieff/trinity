@@ -166,11 +166,13 @@ static bool parseCmdLine(int argc, char** argv)
 	return true;
 }
 
-void displayBitmap(const Bitmap& bmp)
+void displayBitmap(const Bitmap& bmp, const char* msg = NULL)
 {
 	SDL_Init(SDL_INIT_VIDEO);
 	SDL_Surface* screen = SDL_SetVideoMode(bmp.getWidth(), bmp.getHeight(), 32, 0);
 	Uint8* buffer = (Uint8*) screen->pixels;
+	
+	if (msg) SDL_WM_SetCaption(msg, NULL);
 	
 	bool running = true;
 	int cMult = 0;
@@ -248,8 +250,16 @@ int main(int argc, char** argv)
 			return 3;
 		}
 		Bitmap& img = env.getMap(0);
+		int oldW = img.getWidth(), oldH = img.getHeight();
+		// rescale to fit screen:
 		img.rescale(outSize > 0 ? outSize : 1024);
-		displayBitmap(img);
+		// display on screen:
+		char msg[500];
+		if (img.getWidth() != oldW)
+			sprintf(msg, "%s: %dx%d pixels (this preview: %dx%d pixels)", inFile.c_str(), oldW, oldH, img.getWidth(), img.getHeight());
+		else 
+			sprintf(msg, "%s: %dx%d pixels", inFile.c_str(), oldW, oldH);
+		displayBitmap(img, msg);
 	}
 	return 0;
 }
