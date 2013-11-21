@@ -311,6 +311,8 @@ static CoeffCache coeffsCache;
 
 static int arrayResize(Color *src, int src_len, Color *dest, int dest_len, float* coefficients)
 {
+	for (int i = 0; i < dest_len; i++) dest[i].makeZero();
+	//
 	float ratio = (dest_len-1)/((float)src_len-1);
 	for (int i = 0; i < src_len; i++) {
 		float x = i * ratio;
