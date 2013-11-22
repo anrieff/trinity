@@ -37,6 +37,7 @@ vector<Geometry*> geometries;
 vector<Shader*> shaders;
 vector<Node*> nodes;
 Environment* environment = NULL;
+bool wantAA = true, wantPrepass = true;
 
 /// traces a ray in the scene and returns the visible light that comes from that direction
 Color raytrace(Ray ray)
@@ -156,9 +157,28 @@ inline bool tooDifferent(const Color& a, const Color& b)
 		     fabs(a.b - b.b) > THRESHOLD);
 }
 
-void renderScene(void)
+// trace a ray through pixel coords (x, y). In non-stereoscopic mode fetches a screen
+// ray and raytrace()s it.
+// In stereoscopic mode, a ray is traced through both cameras, and the results are
+// mixed to create an anaglyph image.
+Color renderSample(double x, double y)
 {
-	setWindowCaption("trinity: rendering");
+	return raytrace(camera->getScreenRay(x, y));
+}
+
+// gets the color for a single pixel, without antialiasing
+// (when DOF is enabled, no antialiasing is really needed)
+Color renderPixelNoAA(int x, int y)
+{
+	vfb[y][x] = renderSample(x, y);
+	return vfb[y][x];
+}
+
+// gets the color for a single pixel, with antialiasing. Assumes the pixel
+// already holds some value.
+// This simply adds four more AA samples and averages the result.
+Color renderPixelAA(int x, int y)
+{
 	const double kernel[5][2] = {
 		{ 0, 0 },
 		{ 0.3, 0.3 },
@@ -166,40 +186,75 @@ void renderScene(void)
 		{ 0, 0.6 },
 		{ 0.6, 0.6 },
 	};
-	
+	Color accum = vfb[y][x];
+	for (int samples = 1; samples < 5; samples++) {
+		accum += renderSample(x + kernel[samples][0], y + kernel[samples][1]);
+	}
+	vfb[y][x] = accum / 5;
+	return vfb[y][x];
+}
+
+
+void renderScene(void)
+{
+	setWindowCaption("trinity: rendering");
+
 	int W = frameWidth();
 	int H = frameHeight();
 	
-	// first pass: shoot just one ray per pixel
-	for (int y = 0; y < H; y++) {
-		for (int x = 0; x < W; x++) 
-			vfb[y][x] = raytrace(camera->getScreenRay(x, y));
-		if (y % 10 == 0)
-			displayVFB(vfb);
+	std::vector<Rect> buckets = getBucketsList();
+	if (wantPrepass) {
+		// We render the whole screen in three passes.
+		// 1) First pass - use very coarse resolution rendering, tracing a single ray for a 16x16 block:
+		for (size_t i = 0; i < buckets.size(); i++) {
+			Rect& r = buckets[i];
+			for (int dy = 0; dy < r.h; dy += 16) {
+				int ey = min(r.h, dy + 16);
+				for (int dx = 0; dx < r.w; dx += 16) {
+					int ex = min(r.w, dx + 16);
+					Color c = renderPixelNoAA(r.x0 + dx + (ex - dx) / 2, r.y0 + dy + (ey - dy) / 2);
+					if (!drawRect(Rect(r.x0 + dx, r.y0 + dy, r.x0 + ex, r.y0 + ey), c))
+						return;
+				}
+			}
+		}
 	}
 
-	// second pass: find pixels, that need anti-aliasing, by analyzing their neighbours
-	for (int y = 0; y < H; y++) {
-		for (int x = 0; x < W; x++) {
-			Color neighs[5];
-			neighs[0] = vfb[y][x];
-			
-			neighs[1] = vfb[y][x     > 0 ? x - 1 : x];
-			neighs[2] = vfb[y][x + 1 < W ? x + 1 : x];
+	
+	// first pass: shoot just one ray per pixel
+	for (size_t i = 0; i < buckets.size(); i++) {
+		const Rect& r = buckets[i];
+		for (int y = r.y0; y < r.y1; y++)
+			for (int x = r.x0; x < r.x1; x++)
+				renderPixelNoAA(x, y);
+		if (!displayVFBRect(r, vfb))
+			return;
+	}
 
-			neighs[3] = vfb[y     > 0 ? y - 1 : y][x];
-			neighs[4] = vfb[y + 1 < H ? y + 1 : y][x];
-			
-			Color average(0, 0, 0);
-			
-			for (int i = 0; i < 5; i++)
-				average += neighs[i];
-			average /= 5.0f;
-			
-			for (int i = 0; i < 5; i++) {
-				if (tooDifferent(neighs[i], average)) {
-					needsAA[y][x] = true;
-					break;
+	if (wantAA) {
+		// second pass: find pixels, that need anti-aliasing, by analyzing their neighbours
+		for (int y = 0; y < H; y++) {
+			for (int x = 0; x < W; x++) {
+				Color neighs[5];
+				neighs[0] = vfb[y][x];
+				
+				neighs[1] = vfb[y][x     > 0 ? x - 1 : x];
+				neighs[2] = vfb[y][x + 1 < W ? x + 1 : x];
+
+				neighs[3] = vfb[y     > 0 ? y - 1 : y][x];
+				neighs[4] = vfb[y + 1 < H ? y + 1 : y][x];
+				
+				Color average(0, 0, 0);
+				
+				for (int i = 0; i < 5; i++)
+					average += neighs[i];
+				average /= 5.0f;
+				
+				for (int i = 0; i < 5; i++) {
+					if (tooDifferent(neighs[i], average)) {
+						needsAA[y][x] = true;
+						break;
+					}
 				}
 			}
 		}
@@ -221,21 +276,26 @@ void renderScene(void)
 		 * four rays, adding with what we currently have in the pixel, and average
 		 * after that.
 		 */
-		for (int y = 0; y < frameHeight(); y++) {
-			for (int x = 0; x < frameWidth(); x++) { 
-				if (needsAA[y][x]) {
-					Color result = vfb[y][x]; // current result, identical to what we will
-					                          // get if we shoot a new ray with i == 0 in the
-					                          // following code:
-					for (int i = 1; i < 5; i++)
-						result += raytrace(camera->getScreenRay(x + kernel[i][0], y + kernel[i][1]));
-					vfb[y][x] = result / 5.0f;
-				}
+		if (wantAA) {
+			for (size_t i = 0; i < buckets.size(); i++) {
+				const Rect& r = buckets[i];
+				if (!markRegion(r))
+					return;
+				for (int y = r.y0; y < r.y1; y++)
+					for (int x = r.x0; x < r.x1; x++)
+						if (needsAA[y][x]) renderPixelAA(x, y);
+				if (!displayVFBRect(r, vfb))
+					return;
 			}
-			if (y % 10 == 0)
-				displayVFB(vfb);
 		}
 	}
+}
+
+int renderSceneThread(void* /*unused*/)
+{
+	renderScene();
+	rendering = false;
+	return 0;
 }
 
 /// handle a mouse click
@@ -254,7 +314,7 @@ int main(int argc, char** argv)
 	if (!initGraphics(RESX, RESY)) return -1;
 	initializeScene();
 	Uint32 startTicks = SDL_GetTicks();
-	renderScene();
+	renderScene_Threaded();
 	double renderTime = (SDL_GetTicks() - startTicks) / 1000.0;
 	printf("Render time: %.2lf seconds.\n", renderTime);
 	setWindowCaption("trinity: rendertime: %.2lfs", renderTime);

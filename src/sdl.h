@@ -22,6 +22,7 @@
 
 #include "color.h"
 #include "constants.h"
+#include <vector>
 
 bool initGraphics(int frameWidth, int frameHeight);
 void closeGraphics(void);
@@ -32,5 +33,36 @@ int frameHeight(void); //!< returns the frame height (pixels)
 /// sets the caption of the display window. If renderTime >= 0, the 
 /// msg is interpreted as a format string, and must contain '%lf'
 void setWindowCaption(const char* msg, double renderTime = -1);
+
+struct Rect {
+	int x0, y0, x1, y1, w, h;
+	Rect() {}
+	Rect(int _x0, int _y0, int _x1, int _y1)
+	{
+		x0 = _x0, y0 = _y0, x1 = _x1, y1 = _y1;
+		h = y1 - y0;
+		w = x1 - x0;
+	}
+	void clip(int maxX, int maxY); // clips the rectangle against image size
+};
+
+// generate a list of buckets (image sub-rectangles) to be rendered, in a zigzag pattern
+std::vector<Rect> getBucketsList(void);
+
+// fills a rectangle on the screen with a solid color
+// fails if the render thread is about to be killed
+bool drawRect(Rect r, const Color& c);
+
+// same as displayVFB, but only updates a specific region.
+// fails if the thread has to be killed
+bool displayVFBRect(Rect r, Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE]);
+
+// marks a region (places four temporary green corners)
+// fails if the thread is to be killed
+bool markRegion(Rect r);
+
+bool renderScene_Threaded();
+
+extern volatile bool rendering; // used in main/worker thread synchronization
 
 #endif // __SDL_H__

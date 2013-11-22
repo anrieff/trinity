@@ -64,7 +64,7 @@ struct Color {
 	}
 	/// convert to RGB32, with channel shift specifications. The default values are for
 	/// the blue channel occupying the least-significant byte
-	unsigned toRGB32(int redShift = 16, int greenShift = 8, int blueShift = 0)
+	unsigned toRGB32(int redShift = 16, int greenShift = 8, int blueShift = 0) const
 	{
 		unsigned ir = convertTo8bit_sRGB(r);
 		unsigned ig = convertTo8bit_sRGB(g);
