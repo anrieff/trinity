@@ -33,7 +33,7 @@ protected:
 	void remapRGB(std::function<float(float)>); // remap R, G, B channels by a function
 public:
 	Bitmap(); //!< Generates an empty bitmap
-	~Bitmap();
+	virtual ~Bitmap();
 	void freeMem(void); //!< Deletes the memory, associated with the bitmap
 	int getWidth(void) const; //!< Gets the width of the image (X-dimension)
 	int getHeight(void) const; //!< Gets the height of the image (Y-dimension)
