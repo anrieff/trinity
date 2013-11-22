@@ -1,5 +1,5 @@
-#ifndef TRANSFORM_H
-#define TRANSFORM_H
+#ifndef __TRANSFORM_H__
+#define __TRANSFORM_H__
 
 #include "vector.h"
 #include "matrix.h"
@@ -14,6 +14,7 @@ public:
     void reset() {
         transform = Matrix(1);
         inverseTransform = inverseMatrix(transform);
+        offset.makeZero();
     }
 
     void scale(double X, double Y, double Z) {
@@ -71,4 +72,5 @@ private:
 
 };
 
-#endif
+#endif // __TRANSFORM_H__
+

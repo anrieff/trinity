@@ -22,6 +22,7 @@
 
 #include <vector>
 #include "vector.h"
+#include "transform.h"
 
 /// a structure, that holds info about an intersection. Filled in by Geometry::intersect() methods
 class Geometry;
@@ -144,9 +145,11 @@ class Node {
 public:
 	Geometry* geom;
 	Shader* shader;
+	Transform transform;
 	
 	Node() {}
 	Node(Geometry* g, Shader* s) { geom = g; shader = s; }
+	bool intersect(Ray ray, IntersectionData& data);
 };
 
 #endif // __GEOMETRY_H__

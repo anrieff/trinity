@@ -20,17 +20,24 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <algorithm>
 #include "mesh.h"
 #include "constants.h"
 #include "color.h"
+using std::max;
 
-Mesh::Mesh(double height, double scaling, bool tetraeder)
+Mesh::Mesh(double height, bool tetraeder)
 {
 	this->height = height;
-	isSmooth = false;
-	this->scaling = scaling;
+	faceted = false;
 	if (tetraeder) generateTetraeder(); // if 'algorithm' is 1, generate a tetraeder; otherwise, a soccer ball.
 	else generateTruncatedIcosahedron();
+	
+	Vector center(0, 0, 0);
+	double maxDist = 0;
+	for (size_t i = 0; i < vertices.size(); i++)
+		maxDist = max(maxDist, vertices[i].length());
+	boundingSphere = new Sphere(center, maxDist);
 }
 
 Mesh::~Mesh()
@@ -75,8 +82,6 @@ void Mesh::generateTetraeder(void)
 		t.gnormal.normalize();
 		triangles.push_back(t);
 	}
-	for (int i = 0; i < (int) vertices.size(); i++)
-		vertices[i] *= scaling;
 }
 
 void Mesh::generateTruncatedIcosahedron(void)
@@ -124,76 +129,84 @@ void Mesh::generateTruncatedIcosahedron(void)
 	}
 }
 
+bool Mesh::intersectTriangle(const Ray& ray, IntersectionData& data, Triangle& T)
+{
+	bool inSameDirection = (dot(ray.dir, T.gnormal) > 0);
+	if (inSameDirection) return false; // backface culling
+	//              B                     A
+	Vector AB = vertices[T.v[1]] - vertices[T.v[0]];
+	Vector AC = vertices[T.v[2]] - vertices[T.v[0]];
+	Vector D = -ray.dir;
+	//              0               A
+	Vector H = ray.start - vertices[T.v[0]];
+
+	/* 2. Solve the equation:
+	 *
+	 * A + lambda2 * AB + lambda3 * AC = ray.start + gamma * ray.dir
+	 *
+	 * which can be rearranged as:
+	 * lambda2 * AB + lambda3 * AC + gamma * D = ray.start - A
+	 *
+	 * Which is a linear system of three rows and three unknowns, which we solve using Carmer's rule
+	 */
+
+	// Find the determinant of the left part of the equation:
+	double Dcr = (AB ^ AC) * D;
+	
+	// are the ray and triangle parallel?
+	if (fabs(Dcr) < 1e-12) return false;
+	
+	double lambda2 = ( ( H ^ AC) * D ) / Dcr;
+	double lambda3 = ( (AB ^  H) * D ) / Dcr;
+	double gamma   = ( (AB ^ AC) * H ) / Dcr;
+
+	// is intersection behind us, or too far?
+	if (gamma < 0 || gamma > data.dist) return false;
+	
+	// is the intersection outside the triangle?
+	if (lambda2 < 0 || lambda2 > 1 || lambda3 < 0 || lambda3 > 1 || lambda2 + lambda3 > 1)
+		return false;
+	//
+	
+	// intersection found, and it's closer to the current one in data.
+	// store intersection point.
+	data.p = ray.start + ray.dir * gamma;
+	data.dist = gamma;
+	data.g = this;
+	
+	double lambda1 = 1 - lambda2 - lambda3;
+	if (faceted) {
+		data.normal = T.gnormal;
+	} else {
+		// interpolate normals using the barycentric coords:
+		data.normal = normals[T.n[0]] * lambda1 +
+					  normals[T.n[1]] * lambda2 +
+					  normals[T.n[2]] * lambda3;
+		data.normal.normalize();
+	}
+	
+	// interpolate the UV texture coords using barycentric coords:
+	Vector uv = uvs[T.t[0]] * lambda1 +
+				uvs[T.t[1]] * lambda2 +
+				uvs[T.t[2]] * lambda3;
+	data.u = uv.x;
+	data.v = uv.y;
+	return true;
+}
+
 bool Mesh::intersect(Ray ray, IntersectionData& data)
 {
 	bool found = false;
-	for (int i = 0; i < (int) triangles.size(); i++) {
-		// For each triangle
-		Triangle& T = triangles[i];
-		// 1. Fetch all vertices and form the sides AB and AC
-		Vector A = vertices[T.v[0]];
-		Vector B = vertices[T.v[1]];
-		Vector C = vertices[T.v[2]];
-		Vector AB = B - A;
-		Vector AC = C - A;
-		Vector H = ray.start - A;
-		/* 2. Solve the equation:
-		 *
-		 * A + lambda2 * AB + lambda3 * AC = ray.start + gamma * ray.dir
-		 *
-		 * which can be rearranged as:
-		 * lambda2 * AB + lambda3 * AC - gamma * ray.dir = ray.start - A
-		 *
-		 * Which is a linear system of three rows and three unknowns, which we solve using Carmer's rule
-		 */
-		// Find the determinant of the left part of the equation
-		double Dcr = -((AB ^ AC) * ray.dir);
-		// check for zero; if it is zero, then the triangle and the ray are parallel
-		if (fabs(Dcr) < 1e-9) continue;
-		// find the reciprocal of the determinant. We would use this quantity later in order
-		// to multiply by rDcr instead of divide by Dcr (division is much slower)
-		double rDcr = 1.0 / Dcr;
-		// calculate `gamma' by substituting the right part of the equation in the third column of the matrix,
-		// getting the determinant, and dividing by Dcr)
-		double gamma = (AB ^ AC) * H * rDcr;
-		
-		// Is the intersection point behind us?
-		if (gamma <= 0) continue;
-		// Is the intersection point worse than what we currently have?
-		if (gamma > data.dist) continue;
-		// Calculate lambda2
-		double lambda2 = -((H ^ AC) * ray.dir) * rDcr;
-		// Check if it is in range (barycentric coordinates)
-		if (lambda2 < 0 || lambda2 > 1) continue;
-		// Calculate lambda3 and check if it is in range as well
-		double lambda3 = -((AB ^ H) * ray.dir) * rDcr;
-		if (lambda3 < 0 || lambda3 > 1 || lambda2 + lambda3 > 1) continue;
-		// If we reached here, we have the currently best intersection at our hand - update minDist and info
-		data.dist = gamma;
-		data.p = ray.start + ray.dir * gamma;
-		//
-		data.g = this;
-		data.dist = gamma;
-		// Calculate the texture coordinates by substituting the barycentric coordinates lambda2 and lambda3 in the following formula:
-		//
-		// <interpolated> = <quantity_at_vertex_A> + (<quantity_at_vertex_B> - <quantity_at_vertex_A) * lambda2 +
-		//                  (<quantity_at_vertex_C> - <quantity_at_vertex_A>) * lambda3
-		// We want to interpolate the texture coordinates:
-		Vector texCoords  =  uvs[T.t[0]] + (uvs[T.t[1]] - uvs[T.t[0]]) * lambda2 + (uvs[T.t[2]] - uvs[T.t[0]]) * lambda3;
-		//   <interpolated>  <texcoordA>    <texcoordB>   <texcoordA>               <texcoordC>   <texcoordA>
-		data.u = texCoords.x;
-		data.v = texCoords.y;
-		if (isSmooth) {
-			// if we require normal smoothing, we use the same interpolation formula to get the interpolated normal
-			Vector n = normals[T.n[0]] + (normals[T.n[1]] - normals[T.n[0]]) * lambda2 + (normals[T.n[2]] - normals[T.n[0]]) * lambda3;
-			// .. and we don't forget to normalize it later
-			n.normalize();
-			data.normal = n;
-		} else {
-			// no smooth normals - just use the geometric normal of the triangle
-			data.normal = T.gnormal;
-		}
-		found = true;
+	IntersectionData temp = data;
+	// if the ray doesn't intersect the bounding shpere, it is of no use
+	// to continue: it can't possibly intersect the mesh.
+	if (!boundingSphere->intersect(ray, temp)) return false;
+	
+	// naive algorithm - iterate and check for intersection all triangles:
+	for (size_t i = 0; i < triangles.size(); i++) {
+		if (intersectTriangle(ray, data, triangles[i]))
+			found = true;
 	}
+	
 	return found;
 }

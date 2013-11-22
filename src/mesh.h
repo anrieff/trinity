@@ -40,14 +40,21 @@ class Mesh: public Geometry {
 	void generateTruncatedIcosahedron(void);
 	void generateTetraeder(void);
 	
-	double height, scaling;
-	bool isSmooth;   //!< This flags controls whether we want interpolated normals (i.e. a smooth mesh)
+	// intersect a ray with a single triangle. Return true if an intersection exists, and it's
+	// closer to the minimum distance, stored in data.dist
+	bool intersectTriangle(const Ray& ray, IntersectionData& data, Triangle& T);
+	
+	double height;
+	bool faceted; //!< whether the normals interpolation is disabled or not
+	Sphere* boundingSphere; //!< a bounding sphere, which optimizes our whole
 public:
-	Mesh(double height = 1, double scaling = 1, bool tetraeder = true);
+	Mesh(double height = 1, bool tetraeder = true);
 	~Mesh();
 	const char* getName();
 	bool intersect(Ray ray, IntersectionData& info);
 	bool isInside(const Vector& p) const { return false; } //FIXME!!
+	
+	void setFaceted(bool faceted) { this->faceted = faceted; }
 };
 
 #endif // __MESH_H__

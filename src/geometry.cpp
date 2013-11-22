@@ -206,3 +206,24 @@ bool CsgDiff::intersect(Ray ray, IntersectionData& data)
 		data.normal = -data.normal;
 	 return true;
 }
+
+
+bool Node::intersect(Ray ray, IntersectionData& data)
+{
+	ray.start = transform.undoPoint(ray.start);
+	ray.dir = transform.undoDirection(ray.dir);
+	double oldDist = data.dist;
+	double rayDirLength = ray.dir.length();
+	data.dist /= rayDirLength;
+	ray.dir.normalize();
+	bool res = geom->intersect(ray, data);
+	if (!res) {
+		data.dist = oldDist;
+		return false;
+	}
+	data.normal = normalize(transform.direction(data.normal));
+	data.p = transform.point(data.p);
+	data.dist *= rayDirLength;
+	return true;
+}
+

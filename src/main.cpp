@@ -54,7 +54,7 @@ Color raytrace(Ray ray)
 	data.dist = 1e99;
 	
 	for (int i = 0; i < (int) nodes.size(); i++)
-		if (nodes[i]->geom->intersect(ray, data))
+		if (nodes[i]->intersect(ray, data))
 			closestNode = nodes[i];
 
 	if (!closestNode) {
@@ -92,12 +92,13 @@ bool testVisibility(const Vector& from, const Vector& to)
 }
 
 
-void createNode(Geometry* geometry, Shader* shader)
+Node* createNode(Geometry* geometry, Shader* shader)
 {
 	geometries.push_back(geometry);
 	shaders.push_back(shader);
 	Node* node = new Node(geometry, shader);
 	nodes.push_back(node);
+	return node;
 }
 
 void initializeScene(void)
@@ -134,14 +135,21 @@ void initializeScene(void)
 	createNode(new Sphere(Vector(-60, 36, 10), 36), glass);
 	*/
 	
-	Mesh* mesh = new Mesh(1, 100);
-	Checker* checker = new Checker(Color(1, 1, 1), Color(0.5, 0.5, 0.5));
+	
+	Mesh* mesh = new Mesh(1, false);
+	mesh->setFaceted(false);
+	Checker* checker = new Checker(Color(0.7, 0.7, 0.7), Color(0.15, 0.15, 0.15));
 	Lambert* meshShader = new Lambert(Color(1, 1, 1), checker);
-	createNode(mesh, meshShader);
+	Node* meshNode = createNode(mesh, meshShader);
+	meshNode->transform.scale(60, 60, 60);
+	meshNode->transform.translate(Vector(-60, 50, 10));
+	meshNode->transform.rotate(90, 0, 0);
+	
+	
 
 	/* Create a glossy sphere */
 	Sphere* sphere = new Sphere(Vector(100, 50, 60), 50);
-	Shader* glossy = new Refl(Color(0.9, 1.0, 0.9), 0.97, 120);
+	Shader* glossy = new Refl(Color(0.9, 1.0, 0.9), 0.97, 25);
 	
 	createNode(sphere, glossy);
 	
@@ -165,17 +173,13 @@ inline bool tooDifferent(const Color& a, const Color& b)
 		     fabs(a.b - b.b) > THRESHOLD);
 }
 
-// trace a ray through pixel coords (x, y). In non-stereoscopic mode fetches a screen
-// ray and raytrace()s it.
-// In stereoscopic mode, a ray is traced through both cameras, and the results are
-// mixed to create an anaglyph image.
+// trace a ray through pixel coords (x, y).
 Color renderSample(double x, double y)
 {
 	return raytrace(camera->getScreenRay(x, y));
 }
 
 // gets the color for a single pixel, without antialiasing
-// (when DOF is enabled, no antialiasing is really needed)
 Color renderPixelNoAA(int x, int y)
 {
 	vfb[y][x] = renderSample(x, y);
