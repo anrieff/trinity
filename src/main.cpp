@@ -27,6 +27,7 @@
 #include "geometry.h"
 #include "shading.h"
 #include "environment.h"
+#include "mesh.h"
 using namespace std;
 
 Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE]; //!< virtual framebuffer
@@ -125,11 +126,18 @@ void initializeScene(void)
 	planeShader->addLayer(new Refl, Color(0.05, 0.05, 0.05), new Fresnel(1.33));
 	createNode(plane, planeShader);
 
+	/*
 	Layered* glass = new Layered;
 	glass->addLayer(new Refr(Color(0.97, 0.97, 0.97), 1.6), Color(1, 1, 1));
 	glass->addLayer(new Refl(Color(0.97, 0.97, 0.97)), Color(1, 1, 1), new Fresnel(1.6));
 	
 	createNode(new Sphere(Vector(-60, 36, 10), 36), glass);
+	*/
+	
+	Mesh* mesh = new Mesh(1, 100);
+	Checker* checker = new Checker(Color(1, 1, 1), Color(0.5, 0.5, 0.5));
+	Lambert* meshShader = new Lambert(Color(1, 1, 1), checker);
+	createNode(mesh, meshShader);
 
 	/* Create a glossy sphere */
 	Sphere* sphere = new Sphere(Vector(100, 50, 60), 50);
