@@ -382,7 +382,7 @@ void EnvironmentConverter::convertCubemapToSpherical(int outSize)
 	// resample:
 	for (int y = 0; y < outSize / 2; y++) {
 		for (int yss = 0; yss < SUPERSAMPLES; yss++) {
-			printf("\rConverting CubeMap->SphericalMap... %6.2lf%%", (y * SUPERSAMPLES + yss) * 100.0 / ((outSize / 2) * SUPERSAMPLES));
+			printf("\rConverting CubeMap->SphericalMap... %6.2f%%", (y * SUPERSAMPLES + yss) * 100.0f / ((outSize / 2) * SUPERSAMPLES));
 			fflush(stdout);
 			double theta = (y * SUPERSAMPLES + yss) / (double) ((outSize / 2) * SUPERSAMPLES - 1); // [0..1]
 			theta = -(theta * PI - PI/2); // [-PI/2 .. PI/2]
@@ -428,7 +428,7 @@ void EnvironmentConverter::projectCubeSide(BitmapExt& bmp, std::function<Vector(
 	const int SUPERSAMPLES = 4; // actual number of samples is the square of that number.
 	for (int y = 0; y < S; y++) {
 		for (int yss = 0; yss < SUPERSAMPLES; yss++) {
-			printf("\rConverting SphericalMap->CubeMap[%s]... %6.2lf%%", CubeOrderNames[idx], (y * SUPERSAMPLES + yss) * 100.0 / (S * SUPERSAMPLES));
+			printf("\rConverting SphericalMap->CubeMap[%s]... %6.2f%%", CubeOrderNames[idx], (y * SUPERSAMPLES + yss) * 100.0f / (S * SUPERSAMPLES));
 			fflush(stdout);
 			double py = (y * SUPERSAMPLES + yss) / (double) (S * SUPERSAMPLES - 1); // [0..1]
 			py = (py - 0.5) * 2; // [-1..1]
