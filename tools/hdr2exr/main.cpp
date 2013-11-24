@@ -31,6 +31,9 @@
 #include <stdio.h>
 #include <SDL/SDL.h>
 #include <string>
+#ifdef __MINGW32__
+#	include <windows.h>
+#endif
 #include "util.h"
 #include "bitmapext.h"
 using namespace std;
@@ -243,6 +246,12 @@ void displayBitmap(const Bitmap& bmp, const char* msg = NULL)
 
 int main(int argc, char** argv)
 {
+#ifdef __MINGW32__
+	AllocConsole();
+	freopen("CONIN$",  "r",  stdin);
+	freopen("CONOUT$", "w", stdout);
+	freopen("CONOUT$", "w", stderr);
+#endif
 	if (!parseCmdLine(argc, argv)) {
 		printf("%s", USAGE);
 		return 1;

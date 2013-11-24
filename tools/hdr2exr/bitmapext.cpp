@@ -21,7 +21,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <glob.h>
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -194,6 +193,12 @@ EnvironmentConverter::~EnvironmentConverter()
 	}
 }
 
+static bool fileExists(const char* path)
+{
+	struct stat st;
+	return (stat(path, &st) == 0);
+}
+
 bool EnvironmentConverter::load(const char* filename, Format inputFormat)
 {
 	format = inputFormat;
@@ -204,25 +209,30 @@ bool EnvironmentConverter::load(const char* filename, Format inputFormat)
 	if (format != DIR) {
 		return maps[0]->loadImage(filename);
 	} else {
-		glob_t gl;
-		char pattern[strlen(filename) + 10];
-		strcpy(pattern, filename);
-		strcat(pattern, "/*.*");
-		if (glob(pattern, 0, NULL, &gl)) return false;
-		vector<string> names;
-		for (int i = 0; i < gl.gl_pathc; i++)
-			names.push_back(gl.gl_pathv[i]);
-		globfree(&gl);
-		
-		sort(names.begin(), names.end());
-		if (names.size() != 6) return false;
-		for (int i = 0; i < 6; i++) {
-			if (names[i].find(CubeOrderNames[i]) == string::npos) {
-				printf("EnvironmentConverter::load: Couldn't find a file %s in directory %s\n", CubeOrderNames[i], filename);
-				return false;
+		char specificFile[strlen(filename) + 16];
+		const char* SUPPORTED_EXTENSIONS[] = { "exr", "bmp", "pfm", "hdr", "rgbe" };
+		int numExtensions = sizeof(SUPPORTED_EXTENSIONS) / sizeof(SUPPORTED_EXTENSIONS[0]);
+		// see what the extension is, by trying to find a file named negx.$EXTENSION:
+		int extIdx = 0;
+		while (extIdx < numExtensions) {
+			sprintf(specificFile, "%s/negx.%s", filename, SUPPORTED_EXTENSIONS[extIdx]);
+			if (fileExists(specificFile)) break;
+			extIdx++;
+		}
+		if (extIdx >= numExtensions) {
+			printf("Expected to find a file negx.(");
+			for (int i = 0; i < numExtensions; i++) {
+				if (i) printf("|");
+				printf("%s", SUPPORTED_EXTENSIONS[i]);
 			}
-			if (!maps[i]->loadImage(names[i].c_str())) {
-				printf("EnvironmentConverter::load: Couldn't load the file %s from directory %s\n", names[i].c_str(), filename);
+			printf("), but none found.\n");
+			return false;
+		}
+		const char* extension = SUPPORTED_EXTENSIONS[extIdx];
+		for (int i = 0; i < 6; i++) {
+			sprintf(specificFile, "%s/%s.%s", filename, CubeOrderNames[i], extension);
+			if (!maps[i]->loadImage(specificFile)) {
+				printf("EnvironmentConverter::load: Couldn't load the file %s from directory %s\n", specificFile, filename);
 				return false;
 			}
 		}
@@ -234,7 +244,11 @@ static bool mkdirIfNeeded(const char* dirname)
 {
 	struct stat st;
 	if (stat(dirname, &st) == 0) return true;
+#ifdef __MINGW32__
+	return mkdir(dirname) == 0;
+#else
 	return mkdir(dirname, 0777) == 0;
+#endif
 }
 
 bool EnvironmentConverter::save(const char* filename)
