@@ -252,6 +252,8 @@ bool markRegion(Rect r)
 
 bool renderScene_Threaded(void)
 {
+	setWindowCaption("trinity: rendering");
+
 	render_async = true;
 	rendering = true;
 	extern int renderSceneThread(void*);

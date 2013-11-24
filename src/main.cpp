@@ -209,8 +209,6 @@ Color renderPixelAA(int x, int y)
 
 void renderScene(void)
 {
-	setWindowCaption("trinity: rendering");
-
 	int W = frameWidth();
 	int H = frameHeight();
 	
