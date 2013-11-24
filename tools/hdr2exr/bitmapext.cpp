@@ -193,12 +193,6 @@ EnvironmentConverter::~EnvironmentConverter()
 	}
 }
 
-static bool fileExists(const char* path)
-{
-	struct stat st;
-	return (stat(path, &st) == 0);
-}
-
 bool EnvironmentConverter::load(const char* filename, Format inputFormat)
 {
 	format = inputFormat;
