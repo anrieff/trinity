@@ -38,6 +38,7 @@ inline float randomFloat() { return rand() / (float) RAND_MAX; }
 
 std::string upCaseString(std::string s); //!< returns the string in UPPERCASE
 std::string extensionUpper(const char* fileName); //!< Given a filename, return its extension in UPPERCASE
+bool fileExists(const char* filename); //!< returns true if a file can be opened
 
 /// a simple RAII class for FILE* pointers.
 class FileRAII {

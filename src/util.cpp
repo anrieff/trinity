@@ -46,3 +46,10 @@ string extensionUpper(const char* fileName)
 	return "";
 }
 
+bool fileExists(const char* filename)
+{
+	FILE* temp = fopen(filename, "r");
+	if (!temp) return false;
+	fclose(temp);
+	return true;
+}

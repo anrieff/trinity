@@ -36,7 +36,7 @@ bool CubemapEnvironment::loadMaps(const char* folder)
 			char fn[256];
 			for (int si = 0; si < 2; si++) {
 				sprintf(fn, "%s/%s%s%s", folder, prefixes[pi], axes[axis], suffixes[si]);
-				if (map->loadImage(fn)) break;
+				if (fileExists(fn) && map->loadImage(fn)) break;
 			}
 			if (!map->isOK()) return false;
 			maps[n++] = map;
