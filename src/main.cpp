@@ -85,7 +85,7 @@ bool testVisibility(const Vector& from, const Vector& to)
 	temp.dist = (to - from).length();
 	
 	for (int i = 0; i < (int) nodes.size(); i++)
-		if (nodes[i]->geom->intersect(ray, temp))
+		if (nodes[i]->intersect(ray, temp))
 			return false;
 	
 	return true;
