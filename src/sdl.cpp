@@ -69,7 +69,7 @@ void displayVFB(Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE])
 	SDL_Flip(screen);
 }
 
-void setWindowCaption(const char* msg, double renderTime)
+void setWindowCaption(const char* msg, float renderTime)
 {
 	if (renderTime >= 0) {
 		char message[128];

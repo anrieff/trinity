@@ -31,8 +31,8 @@ void waitForUserExit(void); //!< Pause. Wait until the user closes the applicati
 int frameWidth(void); //!< returns the frame width (pixels)
 int frameHeight(void); //!< returns the frame height (pixels)
 /// sets the caption of the display window. If renderTime >= 0, the 
-/// msg is interpreted as a format string, and must contain '%lf'
-void setWindowCaption(const char* msg, double renderTime = -1);
+/// msg is interpreted as a format string, and must contain '%f'
+void setWindowCaption(const char* msg, float renderTime = -1.0f);
 
 struct Rect {
 	int x0, y0, x1, y1, w, h;

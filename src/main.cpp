@@ -327,9 +327,9 @@ int main(int argc, char** argv)
 	initializeScene();
 	Uint32 startTicks = SDL_GetTicks();
 	renderScene_Threaded();
-	double renderTime = (SDL_GetTicks() - startTicks) / 1000.0;
-	printf("Render time: %.2lf seconds.\n", renderTime);
-	setWindowCaption("trinity: rendertime: %.2lfs", renderTime);
+	float renderTime = (SDL_GetTicks() - startTicks) / 1000.0f;
+	printf("Render time: %.2f seconds.\n", renderTime);
+	setWindowCaption("trinity: rendertime: %.2fs", renderTime);
 	displayVFB(vfb);
 	waitForUserExit();
 	closeGraphics();
