@@ -32,9 +32,13 @@
 			<Add option="-std=c++11" />
 			<Add option="-Wall" />
 			<Add option="`sdl-config --cflags`" />
+			<Add directory="/usr/include/OpenEXR" />
 		</Compiler>
 		<Linker>
 			<Add option="`sdl-config --libs`" />
+			<Add library="IlmImf" />
+			<Add library="Half" />
+			<Add library="Iex" />
 		</Linker>
 		<Unit filename="src/bitmap.cpp" />
 		<Unit filename="src/bitmap.h" />
@@ -42,15 +46,21 @@
 		<Unit filename="src/camera.h" />
 		<Unit filename="src/color.h" />
 		<Unit filename="src/constants.h" />
+		<Unit filename="src/environment.cpp" />
+		<Unit filename="src/environment.h" />
 		<Unit filename="src/geometry.cpp" />
 		<Unit filename="src/geometry.h" />
 		<Unit filename="src/main.cpp" />
 		<Unit filename="src/matrix.cpp" />
 		<Unit filename="src/matrix.h" />
+		<Unit filename="src/mesh.cpp" />
+		<Unit filename="src/mesh.h" />
 		<Unit filename="src/sdl.cpp" />
 		<Unit filename="src/sdl.h" />
 		<Unit filename="src/shading.cpp" />
 		<Unit filename="src/shading.h" />
+		<Unit filename="src/transform.h" />
+		<Unit filename="src/util.cpp" />
 		<Unit filename="src/util.h" />
 		<Unit filename="src/vector.h" />
 		<Extensions>
