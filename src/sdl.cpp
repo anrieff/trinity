@@ -20,6 +20,9 @@
 #include <SDL/SDL.h>
 #include <stdio.h>
 #include <algorithm>
+#ifdef __MINGW32__
+#	include <windows.h> // for AllocConsole()
+#endif
 #include "sdl.h"
 using std::min;
 using std::max;
@@ -30,6 +33,18 @@ SDL_Thread *render_thread;
 SDL_mutex *render_lock;
 volatile bool rendering = false;
 bool render_async, wantToQuit = false;
+
+void setupConsole(void)
+{
+	// under Linux, no special setup is necessary - Code::Blocks there does a sufficiently good job
+	// On Windows, we have to setup the console explicitly.
+#ifdef __MINGW32__
+	AllocConsole();
+	freopen("CONIN$",  "r",  stdin);
+	freopen("CONOUT$", "w", stdout);
+	freopen("CONOUT$", "w", stderr);
+#endif
+}
 
 /// try to create a frame window with the given dimensions
 bool initGraphics(int frameWidth, int frameHeight)

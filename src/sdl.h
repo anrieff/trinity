@@ -24,6 +24,7 @@
 #include "constants.h"
 #include <vector>
 
+void setupConsole(void); //!< setup a text console for printing debug stdout, etc...
 bool initGraphics(int frameWidth, int frameHeight);
 void closeGraphics(void);
 void displayVFB(Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE]); //!< displays the VFB (Virtual framebuffer) to the real one.

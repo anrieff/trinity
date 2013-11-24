@@ -321,6 +321,7 @@ void handleMouse(SDL_MouseButtonEvent *mev)
 
 int main(int argc, char** argv)
 {
+	setupConsole();
 	if (!initGraphics(RESX, RESY)) return -1;
 	initializeScene();
 	Uint32 startTicks = SDL_GetTicks();
