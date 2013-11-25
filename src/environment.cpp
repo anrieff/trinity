@@ -75,7 +75,7 @@ CubemapEnvironment::~CubemapEnvironment()
 Color CubemapEnvironment::getSide(const Bitmap& bmp, double x, double y)
 {
 	// Nearest neighbour:
-	return bmp.getPixel(float((x + 1) * 0.5 * (bmp.getWidth()-1)), float((y + 1) * 0.5 * (bmp.getHeight()-1)));
+	return bmp.getFilteredPixel(float((x + 1) * 0.5 * (bmp.getWidth()-1)), float((y + 1) * 0.5 * (bmp.getHeight()-1)));
 }
 
 Color CubemapEnvironment::getEnvironment(const Vector& indir)

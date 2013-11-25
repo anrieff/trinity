@@ -139,7 +139,7 @@ Color BitmapTexture::getTexColor(const Ray& ray, double u, double v, Vector& nor
 	v = v - floor(v); // u, v range in [0..1)
 	float tx = (float) u * bmp.getWidth(); // u is in [0..textureWidth)
 	float ty = (float) v * bmp.getHeight(); // v is in [0..textureHeight)
-	return bmp.getPixel(tx, ty); // fetch a single pixel from the bitmap
+	return bmp.getFilteredPixel(tx, ty); // fetch from the bitmap with bilinear filtering
 }
 
 void Refl::getRandomDiscPoint(double& x, double& y)

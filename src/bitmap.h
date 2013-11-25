@@ -40,6 +40,8 @@ public:
 	bool isOK(void) const; //!< Returns true if the bitmap is valid
 	void generateEmptyImage(int width, int height); //!< Creates an empty image with the given dimensions
 	Color getPixel(int x, int y) const; //!< Gets the pixel at coordinates (x, y). Returns black if (x, y) is outside of the image
+	/// Gets a bilinear-filtered pixel from float coords (x, y). The coordinates wrap when near the edges.
+	Color getFilteredPixel(float x, float y) const;
 	void setPixel(int x, int y, const Color& col); //!< Sets the pixel at coordinates (x, y).
 	
 	bool loadBMP(const char* filename); //!< Loads an image from a BMP file. Returns false in the case of an error
