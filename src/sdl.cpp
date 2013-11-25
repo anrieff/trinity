@@ -283,7 +283,7 @@ bool displayVFBRect(Rect r, Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE])
 	return true;
 }
 
-bool markRegion(Rect r)
+bool markRegion(Rect r, const Color& bracketColor)
 {
 	MutexRAII raii(render_lock);
 
@@ -291,23 +291,34 @@ bool markRegion(Rect r)
 	
 	r.clip(frameWidth(), frameHeight());
 	const int L = 8;
-	if (r.w < L || r.h < L) return true; // region is too small to be marked
+	if (r.w < L+3 || r.h < L+3) return true; // region is too small to be marked
 	Uint32* row;
-	const Uint32 BRACKET_COLOR = Color(0.0f, 0.0f, 0.5f).toRGB32();
-	row = (Uint32*) ((Uint8*) screen->pixels + (r.y0) * screen->pitch);
-	for (int x = r.x0; x < r.x0 + L; x++) row[x] = BRACKET_COLOR;
-	for (int x = r.x1 - L - 1; x < r.x1; x++) row[x] = BRACKET_COLOR;
-	row = (Uint32*) ((Uint8*) screen->pixels + (r.y1 - 1) * screen->pitch);
-	for (int x = r.x0; x < r.x0 + L; x++) row[x] = BRACKET_COLOR;
-	for (int x = r.x1 - L; x < r.x1; x++) row[x] = BRACKET_COLOR;
-	for (int y = r.y0 + 1; y < r.y0 + L; y++) {
-		row = (Uint32*) ((Uint8*) screen->pixels + (y) * screen->pitch);
-		row[r.x0] = row[r.x1 - 1] = BRACKET_COLOR;
+	const Uint32 BRACKET_COLOR = bracketColor.toRGB32();
+	const Uint32 OUTLINE_COLOR = Color(0.75f, 0.75f, 0.75f).toRGB32();
+	#define DRAW_ONE(x, y, color) \
+		((Uint32*) (((Uint8*) screen->pixels) + ((r.y0 + (y)) * screen->pitch)))[r.x0 + (x)] = color
+	#define DRAW(x, y, color) \
+		DRAW_ONE(x, y, color); \
+		DRAW_ONE(y, x, color); \
+		DRAW_ONE(r.w - 1 - (x), y, color); \
+		DRAW_ONE(r.w - 1 - (y), x, color); \
+		DRAW_ONE(x, r.h - 1 - (y), color); \
+		DRAW_ONE(y, r.h - 1 - (x), color); \
+		DRAW_ONE(r.w - 1 - (x), r.h - 1 - (y), color); \
+		DRAW_ONE(r.w - 1 - (y), r.h - 1 - (x), color)
+	
+	for (int i = 1; i <= L; i++) {
+		DRAW(i, 0, OUTLINE_COLOR);
 	}
-	for (int y = r.y1 - L - 1; y < r.y1 - 1; y++) {
-		row = (Uint32*) ((Uint8*) screen->pixels + (y) * screen->pitch);
-		row[r.x0] = row[r.x1 - 1] = BRACKET_COLOR;
+	DRAW(1, 1, OUTLINE_COLOR);
+	DRAW(L + 1, 1, OUTLINE_COLOR);
+	for (int i = 0; i <= L; i++) {
+		DRAW(i, 2, OUTLINE_COLOR);
 	}
+	for  (int i = 2; i <= L; i++) {
+		DRAW(i, 1, BRACKET_COLOR);
+	}
+	
 	SDL_UpdateRect(screen, r.x0, r.y0, r.w, r.h);
 	
 	return true;

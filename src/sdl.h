@@ -61,7 +61,7 @@ bool displayVFBRect(Rect r, Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE]);
 
 // marks a region (places four temporary green corners)
 // fails if the thread is to be killed
-bool markRegion(Rect r);
+bool markRegion(Rect r, const Color& bracketColor = Color(0.0f, 0.0f, 0.5f));
 
 /// Takes a screen shot; converts the VFB to RGB32 and writes it to the specified file.
 /// The extension is used to infer the file format. If it's .BMP, save as gamma-compressed BMP.
