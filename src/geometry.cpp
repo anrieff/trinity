@@ -214,7 +214,7 @@ bool Node::intersect(Ray ray, IntersectionData& data)
 	ray.dir = transform.undoDirection(ray.dir);
 	double oldDist = data.dist;
 	double rayDirLength = ray.dir.length();
-	data.dist /= rayDirLength;
+	data.dist *= rayDirLength;
 	ray.dir.normalize();
 	bool res = geom->intersect(ray, data);
 	if (!res) {
@@ -223,7 +223,7 @@ bool Node::intersect(Ray ray, IntersectionData& data)
 	}
 	data.normal = normalize(transform.direction(data.normal));
 	data.p = transform.point(data.p);
-	data.dist *= rayDirLength;
+	data.dist /= rayDirLength;
 	return true;
 }
 
