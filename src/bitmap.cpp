@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <vector>
 #include "color.h"
 #include "constants.h"
 #include "bitmap.h"
@@ -273,6 +274,26 @@ bool Bitmap::loadEXR(const char* filename)
 		data = NULL;
 		return false;
 	}
+}
+
+bool Bitmap::saveEXR(const char* filename)
+{
+	try {
+		Imf::RgbaOutputFile file(filename, width, height, Imf::WRITE_RGBA);
+		std::vector<Imf::Rgba> temp(width * height);
+		for (int i = 0; i < width * height; i++) {
+			temp[i].r = data[i].r;
+			temp[i].g = data[i].g;
+			temp[i].b = data[i].b;
+			temp[i].a = 1.0f;
+		}
+		file.setFrameBuffer(&temp[0], 1, width);
+		file.writePixels(height);
+	}
+	catch (Iex::BaseExc ex) {
+		return false;
+	}
+	return true;
 }
 
 bool Bitmap::loadImage(const char* filename)

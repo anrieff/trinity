@@ -47,7 +47,9 @@ public:
 	bool loadBMP(const char* filename); //!< Loads an image from a BMP file. Returns false in the case of an error
 	bool loadEXR(const char* filename); //!< Loads an EXR file
 	virtual bool loadImage(const char* filename); //!< Loads an image (autodetected)
+
 	bool saveBMP(const char* filename); //!< Saves the image to a BMP file (with clamping, etc). Returns false in the case of an error (e.g. read-only media)
+	bool saveEXR(const char* filename); //!< Saves the image into the EXR format, preserving the dynamic range, using Half for storage.
 	
 	void decompressGamma_sRGB(void); //!< assuming the pixel data is in sRGB, decompress to linear RGB values
 	void decompressGamma(float gamma); //!< as above, but assume a specific gamma value

@@ -36,8 +36,6 @@ public:
 	virtual bool loadImage(const char* filename); //!< Loads an image (autodetected format)
 	bool loadHDR(const char* filename); //!< Loads a HDR-format file
 	bool loadPFM(const char* filename); //!< Loads a PFM-format file
-	
-	bool saveEXR(const char* filename); //!< Saves the image into the EXR format, preserving the dynamic range, using Half for storage.
 };
 
 enum Format {
