@@ -167,10 +167,17 @@ bool needsAA[VFB_MAX_SIZE][VFB_MAX_SIZE];
 /// checks if two colors are "too different":
 inline bool tooDifferent(const Color& a, const Color& b)
 {
-	const float THRESHOLD = 0.1;
-	return (fabs(a.r - b.r) > THRESHOLD ||
-		     fabs(a.g - b.g) > THRESHOLD ||
-		     fabs(a.b - b.b) > THRESHOLD);
+	const float THRESHOLD = 0.1; // max color threshold; if met on any of the three channels, consider the colors too different
+	for (int comp = 0; comp < 3; comp++) {
+		float theMax = max(a[comp], b[comp]);
+		float theMin = min(a[comp], b[comp]);
+
+		// compare a single channel of the two colors. If the difference between them is large,
+		// but they aren't overexposed, the difference will be visible: needs anti-aliasing.
+		if (theMax - theMin > THRESHOLD && theMin < 1.33f) 
+			return true;
+	}
+	return false;
 }
 
 // trace a ray through pixel coords (x, y).
