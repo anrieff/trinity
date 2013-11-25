@@ -298,12 +298,18 @@ bool Bitmap::saveEXR(const char* filename)
 
 bool Bitmap::loadImage(const char* filename)
 {
-	if (extensionUpper(filename) == "BMP")
-		return loadBMP(filename);
-	else if (extensionUpper(filename) == "EXR")
-		return loadEXR(filename);
-	else return false;
+	if (extensionUpper(filename) == "BMP") return loadBMP(filename);
+	if (extensionUpper(filename) == "EXR") return loadEXR(filename);
+	return false;
 }
+
+bool Bitmap::saveImage(const char* filename)
+{
+	if (extensionUpper(filename) == "BMP") return saveBMP(filename);
+	if (extensionUpper(filename) == "EXR") return saveEXR(filename);
+	return false;
+}
+
 
 void Bitmap::remapRGB(std::function<float(float)> remapFn)
 {

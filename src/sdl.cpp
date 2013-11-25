@@ -117,6 +117,47 @@ void Rect::clip(int W, int H)
 	h = max(0, y1 - y0);
 }
 
+// find an unused file name like 'trinity_0005.bmp'
+static void findUnusedFN(char fn[], const char* suffix)
+{
+	char temp[256];
+	int idx = 0;
+	while (idx < 10000) {
+		sprintf(temp, "trinity_%04d.bmp", idx);
+		FILE* f = fopen(temp, "rb");
+		if (!f) {
+			sprintf(temp, "trinity_%04d.exr", idx);
+			f = fopen(temp, "rb");
+		}
+		if (!f) break; // file doesn't exist - use that
+		fclose(f);
+		idx++;
+	}
+	sprintf(fn, "trinity_%04d.%s", idx, suffix); 
+}
+
+bool takeScreenshot(const char* filename)
+{
+	extern Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE]; // from main.cpp
+	
+	Bitmap bmp;
+	bmp.generateEmptyImage(frameWidth(), frameHeight());
+	for (int y = 0; y < frameHeight(); y++)
+		for (int x = 0; x < frameWidth(); x++)
+			bmp.setPixel(x, y, vfb[y][x]);
+	bool res = bmp.saveImage(filename);
+	if (res) printf("Saved a screenshot as `%s'\n", filename);
+	else printf("Failed to take a screenshot\n");
+	return res;
+}
+
+bool takeScreenshotAuto(Bitmap::OutputFormat fmt)
+{
+	char fn[256];
+	findUnusedFN(fn, fmt == Bitmap::outputFormat_BMP ? "bmp" : "exr");
+	return takeScreenshot(fn);
+}
+
 static void handleEvent(SDL_Event& ev)
 {
 	switch (ev.type) {
@@ -129,6 +170,13 @@ static void handleEvent(SDL_Event& ev)
 				case SDLK_ESCAPE:
 					wantToQuit = true;
 					return;
+				case SDLK_F12:
+					// Shift+F12: screenshot in EXR; else, do it in (gamma-compressed) BMP.
+					if (ev.key.keysym.mod & (KMOD_LSHIFT | KMOD_RSHIFT))
+						takeScreenshotAuto(Bitmap::outputFormat_EXR);
+					else
+						takeScreenshotAuto(Bitmap::outputFormat_BMP);
+					break;
 				default:
 					break;
 			}

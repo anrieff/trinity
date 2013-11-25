@@ -21,6 +21,7 @@
 #define __SDL_H__
 
 #include "color.h"
+#include "bitmap.h"
 #include "constants.h"
 #include <vector>
 
@@ -61,6 +62,17 @@ bool displayVFBRect(Rect r, Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE]);
 // marks a region (places four temporary green corners)
 // fails if the thread is to be killed
 bool markRegion(Rect r);
+
+/// Takes a screen shot; converts the VFB to RGB32 and writes it to the specified file.
+/// The extension is used to infer the file format. If it's .BMP, save as gamma-compressed BMP.
+/// If it's .EXR, use linear, 16-bit per pixel (Half format) EXR.
+bool takeScreenshot(const char* filename);
+
+/// Takes a screen shot; converts the VFB to RGB32 and writes it to a file on disk, in the current
+/// directory. The file name is auto-generated; it searches for the first free file name like "trinity_0001.bmp"
+/// (or .exr),  uses that and writes it there. The given format determines whether it is written as 
+/// BMP or EXR
+bool takeScreenshotAuto(Bitmap::OutputFormat format);
 
 bool renderScene_Threaded();
 
