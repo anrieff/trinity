@@ -292,7 +292,6 @@ bool markRegion(Rect r, const Color& bracketColor)
 	r.clip(frameWidth(), frameHeight());
 	const int L = 8;
 	if (r.w < L+3 || r.h < L+3) return true; // region is too small to be marked
-	Uint32* row;
 	const Uint32 BRACKET_COLOR = bracketColor.toRGB32();
 	const Uint32 OUTLINE_COLOR = Color(0.75f, 0.75f, 0.75f).toRGB32();
 	#define DRAW_ONE(x, y, color) \
