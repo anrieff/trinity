@@ -210,7 +210,7 @@ bool CsgDiff::intersect(Ray ray, IntersectionData& data)
 // intersect a ray with a node, considering the Model transform attached to the node.
 bool Node::intersect(Ray ray, IntersectionData& data)
 {
-	// convert the ray into the canonic space of the object:
+	// world space -> object's canonic space
 	ray.start = transform.undoPoint(ray.start);
 	ray.dir = transform.undoDirection(ray.dir);
 	
@@ -223,6 +223,7 @@ bool Node::intersect(Ray ray, IntersectionData& data)
 		data.dist = oldDist;    // (4)
 		return false;
 	}
+	// The intersection found is in object space, convert to world space:
 	data.normal = normalize(transform.direction(data.normal));
 	data.p = transform.point(data.p);
 	data.dist /= rayDirLength;  // (5)

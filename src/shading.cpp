@@ -118,10 +118,7 @@ Color Phong::shade(Ray ray, const IntersectionData& data)
 
 BitmapTexture::BitmapTexture(const char* fileName, double scaling, float assumedGamma)
 {
-	if (extensionUpper(fileName) == "EXR")
-		bmp.loadEXR(fileName);
-	else
-		bmp.loadBMP(fileName);
+	bmp.loadImage(fileName);
 	this->scaling = scaling;
 	if (assumedGamma != 1) {
 		if (assumedGamma == 2.2f)
@@ -158,6 +155,7 @@ Color Refl::shade(Ray ray, const IntersectionData& data)
 	Vector N = faceforward(ray.dir, data.normal);
 	
 	if (glossiness == 1) {
+	 	// The material is't glossy: simple reflection, launch a single ray:
 		Vector reflected = reflect(ray.dir, N);
 		
 		Ray newRay = ray;
@@ -166,25 +164,32 @@ Color Refl::shade(Ray ray, const IntersectionData& data)
 		newRay.depth = ray.depth + 1;
 		return raytrace(newRay) * color;
 	} else {
+		// generate an orthonormed system; the new vectors a and b will be orthogonal
+		// to each other, and to N, in the same time.
 		Vector a, b;
 		orthonormedSystem(N, a, b);
 		Color result(0, 0, 0);
 		double scaling = tan((1 - glossiness) * PI/2);
+		// hack: avoid combinatorial explosion with inter-reflecting glossy surfaces:
 		int samplesWanted = ray.depth == 0 ? numSamples : 5;
 		for (int i = 0; i < samplesWanted; i++) {
 			Vector reflected;
 			do {
 				double x, y;
+				// get a random point on the unit disc and scale it:
 				getRandomDiscPoint(x, y);
 				x *= scaling;
 				y *= scaling;
 				
+				// modify the normal according to the random offset:
 				Vector newNormal = N + a * x + b * y;
 				newNormal.normalize();
 				
+				// reflect the incoming ray around the new normal:
 				reflected = reflect(ray.dir, newNormal);
-			} while (dot(reflected, N) < 0);
+			} while (dot(reflected, N) < 0); // check if the reflection is valid.
 			
+			// sample the resulting valid ray, and add to the sum
 			Ray newRay = ray;
 			newRay.start = data.p + N * 1e-6;
 			newRay.dir = reflected;
@@ -199,7 +204,9 @@ Color Refr::shade(Ray ray, const IntersectionData& data)
 {
 	Vector N = faceforward(ray.dir, data.normal);
 	
-	
+	// refract() expects the ratio of IOR_WE_ARE_EXITING : IOR_WE_ARE_ENTERING.
+	// the ior parameter has the ratio of this material to vacuum, so if we're
+	// entering the geometry, be sure to take the reciprocal
 	float eta = ior;
 	if (dot(ray.dir, data.normal) < 0)
 		eta = 1.0f / eta;
@@ -239,6 +246,7 @@ Color Layered::shade(Ray ray, const IntersectionData& data)
 	return result;
 }
 
+// Schlick's approximation
 static float fresnel(const Vector& i, const Vector& n, float ior)
 {
 	float f = sqr((1.0f - ior) / (1.0f + ior));
@@ -249,6 +257,8 @@ static float fresnel(const Vector& i, const Vector& n, float ior)
 
 Color Fresnel::getTexColor(const Ray& ray, double u, double v, Vector& normal)
 {
+	// fresnel() expects the IOR_WE_ARE_ENTERING : IOR_WE_ARE_EXITING, so
+	// in the case we're exiting the geometry, be sure to take the reciprocal
 	float eta = ior;
 	if (dot(normal, ray.dir) > 0)
 		eta = 1.0f / eta;
