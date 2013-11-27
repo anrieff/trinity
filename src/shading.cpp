@@ -19,6 +19,7 @@
  ***************************************************************************/
 
 #include "shading.h"
+#include "random_generator.h"
 
 Vector lightPos;
 Color lightColor;
@@ -139,17 +140,6 @@ Color BitmapTexture::getTexColor(const Ray& ray, double u, double v, Vector& nor
 	return bmp.getFilteredPixel(tx, ty); // fetch from the bitmap with bilinear filtering
 }
 
-void Refl::getRandomDiscPoint(double& x, double& y)
-{
-	// pick a random point in the unit disc with uniform probability by using polar coords.
-	// Note the sqrt(). For explanation why it's needed, see 
-	// http://mathworld.wolfram.com/DiskPointPicking.html
-	double theta = randomFloat() * 2 * PI;
-	double rho = sqrt(randomFloat());
-	x = rho * cos(theta);
-	y = rho * sin(theta);
-}
-
 Color Refl::shade(Ray ray, const IntersectionData& data)
 {
 	Vector N = faceforward(ray.dir, data.normal);
@@ -166,6 +156,7 @@ Color Refl::shade(Ray ray, const IntersectionData& data)
 	} else {
 		// generate an orthonormed system; the new vectors a and b will be orthogonal
 		// to each other, and to N, in the same time.
+		Random& rnd = getRandomGen();
 		Vector a, b;
 		orthonormedSystem(N, a, b);
 		Color result(0, 0, 0);
@@ -177,7 +168,7 @@ Color Refl::shade(Ray ray, const IntersectionData& data)
 			do {
 				double x, y;
 				// get a random point on the unit disc and scale it:
-				getRandomDiscPoint(x, y);
+				rnd.unitDiscSample(x, y);
 				x *= scaling;
 				y *= scaling;
 				

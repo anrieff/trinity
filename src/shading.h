@@ -32,7 +32,7 @@ extern Color ambientLight;
 
 
 /// An abstract class, representing a shader in our scene.
-class Shader {
+class Shader: public SceneElement {
 protected:
 	Color color;
 public:
@@ -40,14 +40,20 @@ public:
 	virtual ~Shader() {}
 
 	virtual Color shade(Ray ray, const IntersectionData& data) = 0;
+	
+	// from SceneElement:
+	ElementType getElementType() const { return ELEM_SHADER; }
 };
 
 /// An abstract class, representing a (2D) texture
-class Texture {
+class Texture: public SceneElement {
 public:
 	virtual ~Texture() {}
 	
 	virtual Color getTexColor(const Ray& ray, double u, double v, Vector& normal) = 0;
+
+	// from SceneElement:
+	ElementType getElementType() const { return ELEM_TEXTURE; }
 };
 
 /// A checker texture
@@ -55,7 +61,7 @@ class Checker: public Texture {
 	Color color1, color2; /// the colors of the alternating squares
 	double size; /// the size of a square side, in world units
 public:
-	Checker(const Color& color1, const Color& color2, double size = 1):
+	Checker(const Color& color1 = Color(0, 0, 0), const Color& color2 = Color(1, 1, 1), double size = 1):
 		color1(color1), color2(color2), size(size) {}
 	Color getTexColor(const Ray& ray, double u, double v, Vector& normal);
 };
@@ -72,6 +78,7 @@ public:
 	///     if assumedGamma == 2.2 (a special value) - sRGB decompression is done.
 	///     otherwise, gamma decompression with the given power is performed
 	BitmapTexture(const char* fileName, double scaling = 1, float assumedGamma = 2.2f);
+	BitmapTexture() { scaling = 1; } // default constructor, in which case the loading is d one later.
 	Color getTexColor(const Ray& ray, double u, double v, Vector& normal);
 	
 };
@@ -80,7 +87,7 @@ public:
 class Lambert: public Shader {
 	Texture* texture; //!< a diffuse texture, if not NULL.
 public:
-	Lambert(const Color& diffuseColor, Texture* texture = NULL):
+	Lambert(const Color& diffuseColor = Color(1, 1, 1), Texture* texture = NULL):
 		Shader(diffuseColor), texture(texture) {}
 	Color shade(Ray ray, const IntersectionData& data);
 };
@@ -91,7 +98,7 @@ class Phong: public Shader {
 	double exponent; //!< exponent ("shininess") of the material
 	float strength; //!< strenght of the cos^n specular component (0..1)
 public:
-	Phong(const Color& diffuseColor, double exponent, float strength = 1, Texture* texture = NULL):
+	Phong(const Color& diffuseColor = Color(1, 1, 1), double exponent = 16.0, float strength = 1.0f, Texture* texture = NULL):
 		Shader(diffuseColor), texture(texture), exponent(exponent),
 		strength(strength) {}
 	Color shade(Ray ray, const IntersectionData& data);
@@ -111,7 +118,7 @@ public:
 class Refr: public Shader {
 	float ior;
 public:
-	Refr(const Color& filter, float ior): Shader(filter), ior(ior) {}
+	Refr(const Color& filter = Color(1, 1, 1), float ior = 1.0f): Shader(filter), ior(ior) {}
 	Color shade(Ray ray, const IntersectionData& data);
 };
 
@@ -135,7 +142,7 @@ public:
 class Fresnel: public Texture {
 	float ior;
 public:
-	Fresnel(float ior) : ior(ior) {}
+	Fresnel(float ior = 1.0f) : ior(ior) {}
 	Color getTexColor(const Ray& ray, double u, double v, Vector& normal);
 };
 

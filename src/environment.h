@@ -22,6 +22,7 @@
 
 #include "color.h"
 #include "vector.h"
+#include "scene.h"
 
 enum CubeOrder {
 	NEGX,
@@ -32,11 +33,13 @@ enum CubeOrder {
 	POSZ,
 };
 
-class Environment{
+class Environment: public SceneElement {
 public:
 	virtual ~Environment() {}
 	/// gets a color from the environment at the specified direction
 	virtual Color getEnvironment(const Vector& dir) = 0;
+	
+	ElementType getElementType() const { return ELEM_ENVIRONMENT; }
 };
 
 class Bitmap;
@@ -47,6 +50,7 @@ class CubemapEnvironment: public Environment {
 	Color getSide(const Bitmap& bmp, double x, double y);
 	bool loadMaps(const char* folder);
 public:
+	CubemapEnvironment() { owned = true; } // default constructor in which the loading of textures is done later.
  	/// loads a cubemap from 6 separate images, from the specified folder.
  	/// The images have to be named "posx.bmp", "negx.bmp", "posy.bmp", ...
  	/// (or they may be .exr images, not .bmp).

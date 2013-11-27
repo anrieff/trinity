@@ -28,6 +28,8 @@
 #include "shading.h"
 #include "environment.h"
 #include "mesh.h"
+#include "random_generator.h"
+#include "scene.h"
 using namespace std;
 
 Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE]; //!< virtual framebuffer
@@ -46,7 +48,7 @@ Color raytrace(Ray ray)
 	IntersectionData data;
 	Node* closestNode = NULL;
 	
-	if (ray.depth > MAX_TRACE_DEPTH) return Color(0, 0, 0);
+	if (ray.depth > scene.settings.maxTraceDepth) return Color(0, 0, 0);
 
 	if (ray.debug)
 		cout << "  Raytrace[start = " << ray.start << ", dir = " << ray.dir << "]\n";
@@ -326,11 +328,29 @@ void handleMouse(SDL_MouseButtonEvent *mev)
 	printf("Raytracing completed!\n");
 }
 
+const char* defaultScene = "data/lecture7.trinity";
+
+static bool parseCmdLine(int argc, char** argv)
+{
+	if (argc < 2) return true;
+	if (!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")) {
+		printf("Usage: retrace [scenefile]\n");
+		return false;
+	}
+	defaultScene = argv[1];
+	return true;
+}
+
 int main(int argc, char** argv)
 {
-	setupConsole();
-	if (!initGraphics(RESX, RESY)) return -1;
-	initializeScene();
+	if (!parseCmdLine(argc, argv)) return 0;
+	initRandom((Uint32) time(NULL));
+	if (!scene.parseScene(defaultScene)) {
+		printf("Could not parse the scene!\n");
+		return -1;
+	}
+	if (!initGraphics(scene.settings.frameWidth, scene.settings.frameHeight)) return -1;
+	scene.beginRender();
 	Uint32 startTicks = SDL_GetTicks();
 	renderScene_Threaded();
 	float renderTime = (SDL_GetTicks() - startTicks) / 1000.0f;

@@ -22,6 +22,7 @@
 
 #include <vector>
 #include "vector.h"
+#include "scene.h"
 #include "transform.h"
 
 /// a structure, that holds info about an intersection. Filled in by Geometry::intersect() methods
@@ -36,11 +37,10 @@ struct IntersectionData {
 	Geometry* g; //!< The geometry which was hit
 };
 
-/// An abstract class, that describes a geometry in the scene.
-class Geometry {
+/// An abstract class that represents any intersectable primitive in the scene.
+class Intersectable {
 public:
-	virtual ~Geometry() {}
-
+	virtual ~Intersectable() {}
 	/**
 	 *  @brief Intersect a geometry with a ray.
 	 *  Returns true if an intersection is found, and it was closer than the current value of data.dist.
@@ -56,16 +56,33 @@ public:
 	 * @retval false if no intersection exists, or it is further than the current data.dist. In this case,
 	 *         the `data' struct should remain unchanged.
 	 */
-	virtual bool intersect(Ray ray, IntersectionData& data) = 0;
+	virtual bool intersect(Ray ray, IntersectionData& info) = 0;
+	/// Checks if the given point is "inside" the geometry, for whatever definition of
+	/// inside is appropriate for the object. Returns a boolean value accordingly.
+	virtual bool isInside(const Vector& p) const = 0;
+};
+
+
+/// An abstract class, that describes a geometry in the scene.
+class Geometry: public SceneElement, public Intersectable {
+public:
+	virtual ~Geometry() {}
+
 	virtual const char* getName() = 0; //!< a virtual function, which returns the name of a geometry
-	virtual bool isInside(const Vector& p) const = 0; //!< check whether a point p is inside the geometry.
+
+	// from Intersectable:
+	virtual bool intersect(Ray ray, IntersectionData& data) = 0;
+	virtual bool isInside(const Vector& p) const = 0;
+	
+	// from SceneElement:
+	ElementType getElementType() const { return ELEM_GEOMETRY; }
 };
 
 class Plane: public Geometry {
 	double y; //!< y-intercept. The plane is parallel to XZ, the y-intercept is at this value
 	double limit;
 public:
-	Plane(double _y, double _limit = 1e99) { y = _y; limit = _limit; }
+	Plane(double _y = 0, double _limit = 1e99) { y = _y; limit = _limit; }
 	
 	bool intersect(Ray ray, IntersectionData& data);
 	const char* getName() { return "Plane"; }
@@ -76,7 +93,7 @@ class Sphere: public Geometry {
 	Vector center;
 	double R;
 public:
-	Sphere(const Vector& center, double R): center(center), R(R) {}
+	Sphere(const Vector& center = Vector(0, 0, 0), double R = 1): center(center), R(R) {}
 	
 	bool intersect(Ray ray, IntersectionData& data);
 	const char* getName() { return "Sphere"; }
@@ -88,7 +105,7 @@ class Cube: public Geometry {
 	double side;
 	inline bool intersectCubeSide(const Ray& ray, const Vector& center, IntersectionData& data);
 public:
-	Cube(const Vector& center, double side): center(center), side(side) {}
+	Cube(const Vector& center = Vector(0, 0, 0), double side = 1): center(center), side(side) {}
 
 	bool intersect(Ray ray, IntersectionData& data);	
 	const char* getName() { return "Cube"; }
@@ -114,7 +131,7 @@ public:
 
 class CsgUnion: public CsgOp {
 public:
-	CsgUnion(Geometry* left, Geometry* right): CsgOp(left, right) {}
+	CsgUnion(Geometry* left = NULL, Geometry* right = NULL): CsgOp(left, right) {}
 	
 	bool boolOp(bool inLeft, bool inRight) const { return inLeft || inRight; }
 	const char* getName() { return "CsgUnion"; }
@@ -122,7 +139,7 @@ public:
 
 class CsgDiff: public CsgOp {
 public:
-	CsgDiff(Geometry* left, Geometry* right): CsgOp(left, right) {}
+	CsgDiff(Geometry* left = NULL, Geometry* right = NULL): CsgOp(left, right) {}
 
 	bool intersect(Ray ray, IntersectionData& data); // override the generic intersector to handle a corner case
 	
@@ -132,7 +149,7 @@ public:
 
 class CsgInter: public CsgOp {
 public:
-	CsgInter(Geometry* left, Geometry* right): CsgOp(left, right) {}
+	CsgInter(Geometry* left = NULL, Geometry* right = NULL): CsgOp(left, right) {}
 	
 	bool boolOp(bool inLeft, bool inRight) const { return inLeft && inRight; }
 	const char* getName() { return "CsgInter"; }
@@ -141,7 +158,8 @@ public:
 class Shader;
 
 /// A Node, which holds a geometry, linked to a shader.
-class Node {
+/// it is also allowed to use any Intersectable in place of the geometry - even another node.
+class Node: public SceneElement, public Intersectable {
 public:
 	Geometry* geom;
 	Shader* shader;
@@ -149,7 +167,13 @@ public:
 	
 	Node() {}
 	Node(Geometry* g, Shader* s) { geom = g; shader = s; }
+	
+	// from Intersectable:
 	bool intersect(Ray ray, IntersectionData& data);
+	bool isInside(const Vector& p) const { return geom->isInside(transform.undoPoint(p)); }
+
+	// from SceneElement:
+	ElementType getElementType() const { return ELEM_NODE; }
 };
 
 #endif // __GEOMETRY_H__

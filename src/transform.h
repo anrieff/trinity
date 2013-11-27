@@ -57,25 +57,25 @@ public:
 		offset = V;
 	}
 
-	Vector point(Vector P) {
+	Vector point(Vector P) const {
 		P = P * transform;
 		P = P + offset;
 
 		return P;
 	}
 
-	Vector undoPoint(Vector P) {
+	Vector undoPoint(Vector P) const {
 		P = P - offset;
 		P = P * inverseTransform;
 
 		return P;
 	}
 
-	Vector direction(const Vector& dir) {
+	Vector direction(const Vector& dir) const {
 		return dir * transform;
 	}
 
-	Vector undoDirection(const Vector& dir) {
+	Vector undoDirection(const Vector& dir) const {
 		return dir * inverseTransform;
 	}
 
