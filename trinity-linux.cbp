@@ -55,6 +55,10 @@
 		<Unit filename="src/matrix.h" />
 		<Unit filename="src/mesh.cpp" />
 		<Unit filename="src/mesh.h" />
+		<Unit filename="src/random_generator.cpp" />
+		<Unit filename="src/random_generator.h" />
+		<Unit filename="src/scene.cpp" />
+		<Unit filename="src/scene.h" />
 		<Unit filename="src/sdl.cpp" />
 		<Unit filename="src/sdl.h" />
 		<Unit filename="src/shading.cpp" />
