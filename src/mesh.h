@@ -49,7 +49,7 @@ class Mesh: public Geometry {
 	bool faceted, tetraeder; //!< whether the normals interpolation is disabled or not
 	Sphere* boundingSphere; //!< a bounding sphere, which optimizes our whole
 public:
-	Mesh() { faceted = false; }
+	Mesh() { faceted = false; boundingSphere = NULL; }
 	Mesh(double height, bool tetraeder);
 	~Mesh();
 	const char* getName();

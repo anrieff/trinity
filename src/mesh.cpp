@@ -32,6 +32,7 @@ Mesh::Mesh(double height, bool tetraeder)
 	this->tetraeder = tetraeder;
 	faceted = false;
 	initMesh();
+	boundingSphere = NULL;
 }
 
 void Mesh::initMesh(void)
@@ -48,6 +49,8 @@ void Mesh::initMesh(void)
 
 Mesh::~Mesh()
 {
+	if (boundingSphere)
+		delete boundingSphere;
 }
 
 const char* Mesh::getName()
