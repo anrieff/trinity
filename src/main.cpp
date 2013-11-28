@@ -34,14 +34,6 @@ using namespace std;
 
 Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE]; //!< virtual framebuffer
 
-Camera* camera;
-
-vector<Geometry*> geometries;
-vector<Shader*> shaders;
-vector<Node*> nodes;
-Environment* environment = NULL;
-bool wantAA = true, wantPrepass = true;
-
 /// traces a ray in the scene and returns the visible light that comes from that direction
 Color raytrace(Ray ray)
 {
@@ -55,12 +47,12 @@ Color raytrace(Ray ray)
 
 	data.dist = 1e99;
 	
-	for (int i = 0; i < (int) nodes.size(); i++)
-		if (nodes[i]->intersect(ray, data))
-			closestNode = nodes[i];
+	for (int i = 0; i < (int) scene.nodes.size(); i++)
+		if (scene.nodes[i]->intersect(ray, data))
+			closestNode = scene.nodes[i];
 
 	if (!closestNode) {
-		if (environment != NULL) return environment->getEnvironment(ray.dir);
+		if (scene.environment != NULL) return scene.environment->getEnvironment(ray.dir);
 		return Color(0, 0, 0);
 	}
 	
@@ -86,82 +78,11 @@ bool testVisibility(const Vector& from, const Vector& to)
 	IntersectionData temp;
 	temp.dist = (to - from).length();
 	
-	for (int i = 0; i < (int) nodes.size(); i++)
-		if (nodes[i]->intersect(ray, temp))
+	for (int i = 0; i < (int) scene.nodes.size(); i++)
+		if (scene.nodes[i]->intersect(ray, temp))
 			return false;
 	
 	return true;
-}
-
-
-Node* createNode(Geometry* geometry, Shader* shader)
-{
-	geometries.push_back(geometry);
-	shaders.push_back(shader);
-	Node* node = new Node(geometry, shader);
-	nodes.push_back(node);
-	return node;
-}
-
-void initializeScene(void)
-{
-	camera = new Camera;
-	camera->yaw = 5;
-	camera->pitch = -5;
-	camera->roll = 0;
-	camera->fov = 60;
-	camera->aspect = 4. / 3.0;
-	camera->pos = Vector(45, 120, -300);
-	
-	camera->beginFrame();
-	
-	lightPos = Vector(-90, 1200, -750);
-	lightColor = Color(1, 1, 1);
-	lightPower = 1200000;
-	ambientLight = Color(0.5, 0.5, 0.5);
-	
-	/* Create a floor node, with a layered shader: perfect reflection on top of woody diffuse */
-	Plane* plane = new Plane(-0.01, 200);
-	Texture* texture = new BitmapTexture("data/texture/wood.bmp", 0.0025);
-	Lambert* lambert = new Lambert(Color(1, 1, 1), texture);
-	Layered* planeShader = new Layered;
-	planeShader->addLayer(lambert, Color(1, 1, 1));
-	planeShader->addLayer(new Refl, Color(0.05, 0.05, 0.05), new Fresnel(1.33));
-	createNode(plane, planeShader);
-
-	/*
-	Layered* glass = new Layered;
-	glass->addLayer(new Refr(Color(0.97, 0.97, 0.97), 1.6), Color(1, 1, 1));
-	glass->addLayer(new Refl(Color(0.97, 0.97, 0.97)), Color(1, 1, 1), new Fresnel(1.6));
-	
-	createNode(new Sphere(Vector(-60, 36, 10), 36), glass);
-	*/
-	
-	
-	Mesh* mesh = new Mesh(1, false);
-	mesh->setFaceted(false);
-	Checker* checker = new Checker(Color(0.7, 0.7, 0.7), Color(0.15, 0.15, 0.15));
-	Lambert* meshShader = new Lambert(Color(1, 1, 1), checker);
-	Node* meshNode = createNode(mesh, meshShader);
-	meshNode->transform.scale(60, 60, 60);
-	meshNode->transform.translate(Vector(-60, 50, 10));
-	meshNode->transform.rotate(90, 0, 0);
-	
-	
-
-	/* Create a glossy sphere */
-	Sphere* sphere = new Sphere(Vector(100, 50, 60), 50);
-	Shader* glossy = new Refl(Color(0.9, 1.0, 0.9), 0.97, 25);
-	
-	createNode(sphere, glossy);
-	
-	Color colors[3] = { Color(1, 0, 0), Color(1, 1, 0), Color(0, 1, 0) };
-	// desaturat a bit:
-	for (int i = 0; i < 3; i++) colors[i].adjustSaturation(0.9f);
-	for (int i = 0; i < 3; i++)
-		createNode(new Sphere(Vector(10 + 32*i, 15, 0), 15), new Phong(colors[i]*0.75, 32));
-		
-	environment = new CubemapEnvironment("data/env/forest");
 }
 
 bool needsAA[VFB_MAX_SIZE][VFB_MAX_SIZE];
@@ -185,7 +106,7 @@ inline bool tooDifferent(const Color& a, const Color& b)
 // trace a ray through pixel coords (x, y).
 Color renderSample(double x, double y)
 {
-	return raytrace(camera->getScreenRay(x, y));
+	return raytrace(scene.camera->getScreenRay(x, y));
 }
 
 // gets the color for a single pixel, without antialiasing
@@ -222,7 +143,7 @@ void renderScene(void)
 	int H = frameHeight();
 	
 	std::vector<Rect> buckets = getBucketsList();
-	if (wantPrepass) {
+	if (scene.settings.wantPrepass) {
 		// We render the whole screen in three passes.
 		// 1) First pass - use very coarse resolution rendering, tracing a single ray for a 16x16 block:
 		for (size_t i = 0; i < buckets.size(); i++) {
@@ -250,7 +171,7 @@ void renderScene(void)
 			return;
 	}
 
-	if (wantAA) {
+	if (scene.settings.wantAA) {
 		// second pass: find pixels, that need anti-aliasing, by analyzing their neighbours
 		for (int y = 0; y < H; y++) {
 			for (int x = 0; x < W; x++) {
@@ -295,7 +216,7 @@ void renderScene(void)
 		 * four rays, adding with what we currently have in the pixel, and average
 		 * after that.
 		 */
-		if (wantAA) {
+		if (scene.settings.wantAA) {
 			for (size_t i = 0; i < buckets.size(); i++) {
 				const Rect& r = buckets[i];
 				if (!markRegion(r))
@@ -312,6 +233,7 @@ void renderScene(void)
 
 int renderSceneThread(void* /*unused*/)
 {
+	scene.beginFrame();
 	renderScene();
 	rendering = false;
 	return 0;
@@ -322,7 +244,7 @@ void handleMouse(SDL_MouseButtonEvent *mev)
 {
 	if (mev->button != 1) return; // only consider the left mouse button
 	printf("Mouse click from (%d, %d)\n", (int) mev->x, (int) mev->y);
-	Ray ray = camera->getScreenRay(mev->x, mev->y);
+	Ray ray = scene.camera->getScreenRay(mev->x, mev->y);
 	ray.debug = true;
 	raytrace(ray);
 	printf("Raytracing completed!\n");

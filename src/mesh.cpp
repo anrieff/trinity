@@ -29,7 +29,13 @@ using std::max;
 Mesh::Mesh(double height, bool tetraeder)
 {
 	this->height = height;
+	this->tetraeder = tetraeder;
 	faceted = false;
+	initMesh();
+}
+
+void Mesh::initMesh(void)
+{
 	if (tetraeder) generateTetraeder(); // if 'algorithm' is 1, generate a tetraeder; otherwise, a soccer ball.
 	else generateTruncatedIcosahedron();
 	

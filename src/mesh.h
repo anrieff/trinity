@@ -43,18 +43,28 @@ class Mesh: public Geometry {
 	// intersect a ray with a single triangle. Return true if an intersection exists, and it's
 	// closer to the minimum distance, stored in data.dist
 	bool intersectTriangle(const Ray& ray, IntersectionData& data, Triangle& T);
+	void initMesh(void);
 	
 	double height;
-	bool faceted; //!< whether the normals interpolation is disabled or not
+	bool faceted, tetraeder; //!< whether the normals interpolation is disabled or not
 	Sphere* boundingSphere; //!< a bounding sphere, which optimizes our whole
 public:
-	Mesh(double height = 1, bool tetraeder = true);
+	Mesh() { faceted = false; }
+	Mesh(double height, bool tetraeder);
 	~Mesh();
 	const char* getName();
 	bool intersect(Ray ray, IntersectionData& info);
 	bool isInside(const Vector& p) const { return false; } //FIXME!!
 	
 	void setFaceted(bool faceted) { this->faceted = faceted; }
+	
+	void fillProperties(ParsedBlock& pb)
+	{
+		pb.getDoubleProp("height", &height);
+		pb.getBoolProp("tetraeder", &tetraeder);
+		pb.getBoolProp("faceted", &faceted);
+		initMesh();
+	}
 };
 
 #endif // __MESH_H__

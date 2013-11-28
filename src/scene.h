@@ -163,12 +163,12 @@ public:
 	
 	// Does the same logic as getFilenameProp(), but also loads the bitmap
 	// file from the specified file name. The given bitmap is first deleted if not NULL.
-	virtual bool getBitmapFileProp(const char* name, Bitmap** value) = 0;
+	virtual bool getBitmapFileProp(const char* name, Bitmap& value) = 0;
 	
 	// Gets a transform from the parsed block. Namely, it searches for all properties named
 	// "scale", "rotate" and "translate" and applies them to T. IT is the inverse of T and
 	// is computed after the last modification to T.
-	virtual void getTransformProp(Transform& T, Transform& IT) = 0;
+	virtual void getTransformProp(Transform& T) = 0;
 	
 	virtual void requiredProp(const char* name) = 0; // signal an error (missing property of the given name)
 	
@@ -239,9 +239,15 @@ void stripPunctuation(char* expression); //!< strips any whitespace or punctuati
 
 /// This structure holds all global settings of the scene - frame size, antialiasing toggles, thresholds, etc...
 struct GlobalSettings: public SceneElement {
-	int frameWidth, frameHeight; //!< Frame sizes
+	int frameWidth, frameHeight; //!< render window size
 
+	// Lighting:
 	Color ambientLight;          //!< ambient color
+	Color lightColor;            //!< point light color
+	float lightPower;            //!< light power
+	Vector lightPos;             //!< light position
+	
+	// AA-related:
 	bool wantAA, wantPrepass;    //!< Antialiasing flag and prepass (a quick low-resolution rendering) flag
 	double aaThresh;             //!< The antialiasing color difference threshold (see renderScene)
 	

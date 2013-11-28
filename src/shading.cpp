@@ -18,13 +18,9 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#include <string.h>
 #include "shading.h"
 #include "random_generator.h"
-
-Vector lightPos;
-Color lightColor;
-float lightPower;
-Color ambientLight;
 
 extern bool testVisibility(const Vector& from, const Vector& to);
 extern Color raytrace(Ray ray);
@@ -64,17 +60,17 @@ Color Lambert::shade(Ray ray, const IntersectionData& data)
 	Color diffuseColor = this->color;
 	if (texture) diffuseColor = texture->getTexColor(ray, data.u, data.v, N);
 	
-	Color lightContrib = ambientLight;
+	Color lightContrib = scene.settings.ambientLight;
 	
-	if (testVisibility(data.p + N * 1e-6, lightPos)) {
-		Vector lightDir = lightPos - data.p;
+	if (testVisibility(data.p + N * 1e-6, scene.settings.lightPos)) {
+		Vector lightDir = scene.settings.lightPos - data.p;
 		lightDir.normalize();
 		
 		// get the Lambertian cosine of the angle between the geometry's normal and
 		// the direction to the light. This will scale the lighting:
 		double cosTheta = dot(lightDir, N);
 		
-		lightContrib += lightColor * lightPower / (data.p - lightPos).lengthSqr() * cosTheta;
+		lightContrib += scene.settings.lightColor * scene.settings.lightPower / (data.p - scene.settings.lightPos).lengthSqr() * cosTheta;
 	}
 	return diffuseColor * lightContrib;
 }
@@ -87,11 +83,11 @@ Color Phong::shade(Ray ray, const IntersectionData& data)
 	Color diffuseColor = this->color;
 	if (texture) diffuseColor = texture->getTexColor(ray, data.u, data.v, N);
 	
-	Color lightContrib = ambientLight;
+	Color lightContrib = scene.settings.ambientLight;
 	Color specular(0, 0, 0);
 	
-	if (testVisibility(data.p + N * 1e-6, lightPos)) {
-		Vector lightDir = lightPos - data.p;
+	if (testVisibility(data.p + N * 1e-6, scene.settings.lightPos)) {
+		Vector lightDir = scene.settings.lightPos - data.p;
 		lightDir.normalize();
 		
 		// get the Lambertian cosine of the angle between the geometry's normal and
@@ -99,7 +95,7 @@ Color Phong::shade(Ray ray, const IntersectionData& data)
 		double cosTheta = dot(lightDir, N);
 
 		// baseLight is the light that "arrives" to the intersection point
-		Color baseLight = lightColor * lightPower / (data.p - lightPos).lengthSqr();
+		Color baseLight = scene.settings.lightColor * scene.settings.lightPower / (data.p - scene.settings.lightPos).lengthSqr();
 		
 		lightContrib += baseLight * cosTheta; // lambertian contribution
 		
@@ -235,6 +231,50 @@ Color Layered::shade(Ray ray, const IntersectionData& data)
 		result = transparency * result + opacity * l.shader->shade(ray, data);
 	}
 	return result;
+}
+
+void Layered::fillProperties(ParsedBlock& pb)
+{
+	char name[128];
+	char value[256];
+	int srcLine;
+	for (int i = 0; i < pb.getBlockLines(); i++) {
+		// fetch and parse all lines like "layer <shader>, <color>[, <texture>]"
+		pb.getBlockLine(i, srcLine, name, value);
+		if (!strcmp(name, "layer")) {
+			char shaderName[200];
+			char textureName[200] = "";
+			bool err = false;
+			if (!getFrontToken(value, shaderName)) {
+				err = true;
+			} else {
+				stripPunctuation(shaderName);
+			}
+			if (!strlen(value)) err = true;
+			if (!err && value[strlen(value) - 1] != ')') {
+				if (!getLastToken(value, textureName)) {
+					err = true;
+				} else {
+					stripPunctuation(textureName);
+				}
+			}
+			if (!err && !strcmp(textureName, "NULL")) strcpy(textureName, "");
+			Shader* shader = NULL;
+			Texture* texture = NULL;
+			if (!err) {
+				shader = pb.getParser().findShaderByName(shaderName);
+				err = (shader == NULL);
+			}
+			if (!err && strlen(textureName)) {
+				texture = pb.getParser().findTextureByName(textureName);
+				err = (texture == NULL);
+			}
+			if (err) throw SyntaxError(srcLine, "Expected a line like `layer <shader>, <color>[, <texture>]'");
+			double x, y, z;
+			get3Doubles(srcLine, value, x, y, z);
+			addLayer(shader, Color((float) x, (float) y, (float) z), texture);
+		}
+	}
 }
 
 // Schlick's approximation

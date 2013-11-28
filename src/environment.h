@@ -63,6 +63,17 @@ public:
 	CubemapEnvironment(Bitmap** maps);
 	~CubemapEnvironment();
 	Color getEnvironment(const Vector& dir);
+	
+	void fillProperties(ParsedBlock& pb)
+	{
+		Environment::fillProperties(pb);
+		char folder[256];
+		if (!pb.getFilenameProp("folder", folder)) pb.requiredProp("folder");
+		if (!loadMaps(folder)) {
+			fprintf(stderr, "CubemapEnvironment: Could not load maps from `%s'\n", folder);
+		}
+	}
+
 };
 
 #endif // __ENVIRONMENT_H__

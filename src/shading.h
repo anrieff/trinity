@@ -25,12 +25,6 @@
 #include "geometry.h"
 #include "bitmap.h"
 
-extern Vector lightPos;
-extern Color lightColor;
-extern float lightPower;
-extern Color ambientLight;
-
-
 /// An abstract class, representing a shader in our scene.
 class Shader: public SceneElement {
 protected:
@@ -43,6 +37,12 @@ public:
 	
 	// from SceneElement:
 	ElementType getElementType() const { return ELEM_SHADER; }
+
+	void fillProperties(ParsedBlock& pb)
+	{
+		pb.getColorProp("color", &color);
+	}
+
 };
 
 /// An abstract class, representing a (2D) texture
@@ -64,6 +64,12 @@ public:
 	Checker(const Color& color1 = Color(0, 0, 0), const Color& color2 = Color(1, 1, 1), double size = 1):
 		color1(color1), color2(color2), size(size) {}
 	Color getTexColor(const Ray& ray, double u, double v, Vector& normal);
+	void fillProperties(ParsedBlock& pb)
+	{
+		pb.getColorProp("color1", &color1);
+		pb.getColorProp("color2", &color2);
+		pb.getDoubleProp("size", &size);
+	}
 };
 
 class BitmapTexture: public Texture {
@@ -78,9 +84,14 @@ public:
 	///     if assumedGamma == 2.2 (a special value) - sRGB decompression is done.
 	///     otherwise, gamma decompression with the given power is performed
 	BitmapTexture(const char* fileName, double scaling = 1, float assumedGamma = 2.2f);
-	BitmapTexture() { scaling = 1; } // default constructor, in which case the loading is d one later.
+	BitmapTexture() { scaling = 1; } // default constructor, in which case the loading is done later.
 	Color getTexColor(const Ray& ray, double u, double v, Vector& normal);
 	
+	void fillProperties(ParsedBlock& pb)
+	{
+		pb.getBitmapFileProp("file", bmp);
+		pb.getDoubleProp("scaling", &scaling);
+	}
 };
 
 /// A Lambert (flat) shader
@@ -90,18 +101,30 @@ public:
 	Lambert(const Color& diffuseColor = Color(1, 1, 1), Texture* texture = NULL):
 		Shader(diffuseColor), texture(texture) {}
 	Color shade(Ray ray, const IntersectionData& data);
+	void fillProperties(ParsedBlock& pb)
+	{
+		Shader::fillProperties(pb);
+		pb.getTextureProp("texture", &texture);
+	}
 };
 
 /// A Phong shader
 class Phong: public Shader {
 	Texture* texture; //!< a diffuse texture, if not NULL.
 	double exponent; //!< exponent ("shininess") of the material
-	float strength; //!< strenght of the cos^n specular component (0..1)
+	float strength; //!< strength of the cos^n specular component (0..1)
 public:
 	Phong(const Color& diffuseColor = Color(1, 1, 1), double exponent = 16.0, float strength = 1.0f, Texture* texture = NULL):
 		Shader(diffuseColor), texture(texture), exponent(exponent),
 		strength(strength) {}
 	Color shade(Ray ray, const IntersectionData& data);
+	void fillProperties(ParsedBlock& pb)
+	{
+		Shader::fillProperties(pb);
+		pb.getDoubleProp("exponent", &exponent, 1e-6, 1e6);
+		pb.getFloatProp("strength", &strength, 0, 1e6);
+		pb.getTextureProp("texture", &texture);
+	}
 };
 
 class Refl: public Shader {
@@ -113,6 +136,12 @@ public:
 		int numSamples = 20):
 		Shader(filter), glossiness(glossiness), numSamples(numSamples) {}
 	Color shade(Ray ray, const IntersectionData& data);
+	void fillProperties(ParsedBlock& pb)
+	{
+		Shader::fillProperties(pb);
+		pb.getDoubleProp("glossiness", &glossiness, 0, 1);
+		pb.getIntProp("numSamples", &numSamples, 1);
+	}
 };
 
 class Refr: public Shader {
@@ -120,6 +149,11 @@ class Refr: public Shader {
 public:
 	Refr(const Color& filter = Color(1, 1, 1), float ior = 1.0f): Shader(filter), ior(ior) {}
 	Color shade(Ray ray, const IntersectionData& data);
+	void fillProperties(ParsedBlock& pb)
+	{
+		Shader::fillProperties(pb);
+		pb.getFloatProp("ior", &ior, 1e-6, 10);
+	}
 };
 
 class Layered: public Shader {
@@ -137,6 +171,7 @@ public:
 	void addLayer(Shader* shader, const Color& blend, Texture* texture = NULL);
 	
 	Color shade(Ray ray, const IntersectionData& data);
+	void fillProperties(ParsedBlock& pb);
 };
 
 class Fresnel: public Texture {
@@ -144,6 +179,10 @@ class Fresnel: public Texture {
 public:
 	Fresnel(float ior = 1.0f) : ior(ior) {}
 	Color getTexColor(const Ray& ray, double u, double v, Vector& normal);
+	void fillProperties(ParsedBlock& pb)
+	{
+		pb.getFloatProp("ior", &ior, 1e-6, 10);
+	}
 };
 
 #endif // __SHADING_H__

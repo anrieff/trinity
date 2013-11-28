@@ -39,6 +39,17 @@ public:
 	void beginFrame(); //!< must be called before each frame. Computes the corner variables, needed for getScreenRay()
 	ElementType getElementType() const { return ELEM_CAMERA; }
 	
+	void fillProperties(ParsedBlock& pb)
+	{
+		if (!pb.getVectorProp("pos", &pos))
+			pb.requiredProp("pos");
+		pb.getDoubleProp("aspect", &aspect, 1e-6);
+		pb.getDoubleProp("fov", &fov, 0.0001, 179);
+		pb.getDoubleProp("yaw", &yaw);
+		pb.getDoubleProp("pitch", &pitch, -90, 90);
+		pb.getDoubleProp("roll", &roll);
+	}
+	
 	/// generates a screen ray through a pixel (x, y - screen coordinates, not necessarily integer).
 	Ray getScreenRay(double x, double y);
 };

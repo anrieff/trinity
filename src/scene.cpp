@@ -90,8 +90,8 @@ public:
 	bool getNodeProp(const char* name, Node** value);
 	bool getStringProp(const char* name, char* value);
 	bool getFilenameProp(const char* name, char* value);
-	bool getBitmapFileProp(const char* name, Bitmap** value);
-	void getTransformProp(Transform& T, Transform& IT);
+	bool getBitmapFileProp(const char* name, Bitmap& value);
+	void getTransformProp(Transform& T);
 	void requiredProp(const char* name);
 	void signalError(const char* msg);
 	void signalWarning(const char* msg);
@@ -284,19 +284,16 @@ bool ParsedBlockImpl::getFilenameProp(const char* name, char* value)
 	else throw FileNotFoundError(line, value_s);
 }
 
-bool ParsedBlockImpl::getBitmapFileProp(const char* name, Bitmap** value)
+bool ParsedBlockImpl::getBitmapFileProp(const char* name, Bitmap& bmp)
 {
 	PBEGIN;
 	char filename[256];
 	strcpy(filename, value_s);
 	if (!parser->resolveFullPath(filename)) throw FileNotFoundError(line, filename);
-	Bitmap*& bmp = *value;
-	if (bmp) delete bmp;
-	bmp = new Bitmap;
-	return bmp->loadImage(filename);
+	return bmp.loadImage(filename);
 }
 
-void ParsedBlockImpl::getTransformProp(Transform& T, Transform& IT)
+void ParsedBlockImpl::getTransformProp(Transform& T)
 {
 	for (int i = 0; i < (int) lines.size(); i++) {
 		double x, y, z;
@@ -310,11 +307,13 @@ void ParsedBlockImpl::getTransformProp(Transform& T, Transform& IT)
 			lines[i].recognized = true;
 			get3Doubles(lines[i].line, lines[i].propValue, x, y, z);
 			T.rotate(x, y, z);
+			continue;
 		}
 		if (!strcmp(lines[i].propName, "translate")) {
 			lines[i].recognized = true;
 			get3Doubles(lines[i].line, lines[i].propValue, x, y, z);
 			T.translate(Vector(x, y, z));
+			continue;
 		}
 	}
 }
@@ -829,6 +828,9 @@ void GlobalSettings::fillProperties(ParsedBlock& pb)
 	pb.getIntProp("frameWidth", &frameWidth);
 	pb.getIntProp("frameHeight", &frameHeight);
 	pb.getColorProp("ambientLight", &ambientLight);
+	pb.getVectorProp("lightPos", &lightPos);
+	pb.getColorProp("lightColor", &lightColor);
+	pb.getFloatProp("lightPower", &lightPower);
 	pb.getIntProp("maxTraceDepth", &maxTraceDepth);
 	pb.getBoolProp("dbg", &dbg);
 	pb.getBoolProp("wantPrepass", &wantPrepass);

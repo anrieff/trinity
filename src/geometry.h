@@ -83,7 +83,12 @@ class Plane: public Geometry {
 	double limit;
 public:
 	Plane(double _y = 0, double _limit = 1e99) { y = _y; limit = _limit; }
-	
+
+	void fillProperties(ParsedBlock& pb)
+	{
+		pb.getDoubleProp("y", &y);
+		pb.getDoubleProp("limit", &limit);
+	}
 	bool intersect(Ray ray, IntersectionData& data);
 	const char* getName() { return "Plane"; }
 	bool isInside(const Vector& p) const { return false; }
@@ -95,6 +100,12 @@ class Sphere: public Geometry {
 public:
 	Sphere(const Vector& center = Vector(0, 0, 0), double R = 1): center(center), R(R) {}
 	
+	void fillProperties(ParsedBlock& pb)
+	{
+		pb.getVectorProp("center", &center);
+		pb.getDoubleProp("R", &R);
+	}
+
 	bool intersect(Ray ray, IntersectionData& data);
 	const char* getName() { return "Sphere"; }
 	bool isInside(const Vector& p) const { return (center - p).lengthSqr() < R*R; }
@@ -106,6 +117,12 @@ class Cube: public Geometry {
 	inline bool intersectCubeSide(const Ray& ray, const Vector& center, IntersectionData& data);
 public:
 	Cube(const Vector& center = Vector(0, 0, 0), double side = 1): center(center), side(side) {}
+
+	void fillProperties(ParsedBlock& pb)
+	{
+		pb.getVectorProp("center", &center);
+		pb.getDoubleProp("side", &side);
+	}
 
 	bool intersect(Ray ray, IntersectionData& data);	
 	const char* getName() { return "Cube"; }
@@ -122,6 +139,14 @@ protected:
 	void findAllIntersections(Geometry* geom, Ray ray, std::vector<IntersectionData>& l);
 public:
 	CsgOp(Geometry* left, Geometry* right) : left(left), right(right) {}
+
+	void fillProperties(ParsedBlock& pb)
+	{
+		pb.requiredProp("left");
+		pb.requiredProp("right");
+		pb.getGeometryProp("left", &left);
+		pb.getGeometryProp("right", &right);
+	}
 	
 	bool intersect(Ray ray, IntersectionData& data);	
 	
@@ -174,6 +199,12 @@ public:
 
 	// from SceneElement:
 	ElementType getElementType() const { return ELEM_NODE; }
+	void fillProperties(ParsedBlock& pb)
+	{
+		pb.getGeometryProp("geometry", &geom);
+		pb.getShaderProp("shader", &shader);
+		pb.getTransformProp(transform);
+	}
 };
 
 #endif // __GEOMETRY_H__
