@@ -1,0 +1,40 @@
+//
+// This scene file recreates initializeScene() around tag 'homework4'
+//
+
+GlobalSettings {
+	frameWidth          640
+	frameHeight         480
+	ambientLight (0, 0, 0)
+	lightPos     (-30, 100, 250)
+	lightColor   (1, 1, 1)
+	lightPower   50000
+}
+
+Camera camera {
+	pos     (0, 165, 0)
+	aspect   1.33333
+	yaw      0
+	pitch   -30
+	roll     0
+	fov     90
+}
+
+Plane floor {
+	y      2
+}
+
+Checker checker {
+	color1 (0,   0, 0)
+	color2 (0, 0.5, 1)
+	size    5
+}
+
+Lambert floor_shader {
+	texture checker
+}
+
+Node floor {
+	geometry floor
+	shader   floor_shader
+}

@@ -1,0 +1,118 @@
+//
+// This scene file recreates initializeScene() around tag 'homework4'
+//
+
+GlobalSettings {
+	frameWidth          640
+	frameHeight         480
+	ambientLight (0.2, 0.2, 0.2)
+	lightPos     (-90, 700, 350)
+	lightColor   (1, 1, 1)
+	lightPower   800000
+}
+
+Camera camera {
+	pos     (0, 165, 0)
+	aspect   1.33333
+	yaw      0
+	pitch   -30
+	roll     0
+	fov     90
+}
+
+// Plane:
+Plane floor {
+	y      -0.01
+}
+
+BitmapTexture bmp {
+	file "floor.bmp"
+	scaling 0.005
+}
+
+Lambert floor_shader {
+	texture bmp
+}
+
+Node floor {
+	geometry floor
+	shader   floor_shader
+}
+
+
+
+// Globe sphere:
+BitmapTexture world {
+	file "world.bmp"
+}
+
+Lambert globe_shader {
+	texture world
+}
+
+Sphere globe_ball {
+	center (100, 50, 320)
+	R 50
+}
+
+Node globe {
+	geometry globe_ball
+	shader   globe_shader
+}
+
+
+
+// CSG object:
+Cube cube {
+	center (-100, 60, 200)
+	side 100
+}
+
+Sphere sphere {
+	center (-100, 60, 200)
+	R 70
+}
+
+CsgDiff diff {
+	left  cube
+	right sphere
+}
+
+Phong csg_shader {
+	color (0.5, 0.5, 0)
+	exponent 60
+}
+
+Node csgNode {
+	geometry diff
+	shader   csg_shader
+}
+
+
+// three balls:
+Phong ball_shader {
+	color (0, 0, 0.6)
+	exponent 80
+}
+
+Sphere S {
+	R 15
+}
+
+
+Node S1 {
+	geometry S
+	shader ball_shader
+	translate (100, 15, 256)
+}
+Node S2 {
+	geometry S
+	shader ball_shader
+	translate (100, 15, 206)
+}
+Node S3 {
+	geometry S
+	shader ball_shader
+	translate (100, 15, 156)
+}
+
