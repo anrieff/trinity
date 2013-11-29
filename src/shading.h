@@ -75,6 +75,7 @@ public:
 class BitmapTexture: public Texture {
 	Bitmap bmp;
 	double scaling;
+	float assumedGamma;
 public:
 	/// load a bitmap texture from file
 	/// @param fileName: the path to the bitmap file. Can be .bmp or .exr
@@ -83,14 +84,21 @@ public:
 	///     if assumedGamma == 1, no gamma decompression is done.
 	///     if assumedGamma == 2.2 (a special value) - sRGB decompression is done.
 	///     otherwise, gamma decompression with the given power is performed
-	BitmapTexture(const char* fileName, double scaling = 1, float assumedGamma = 2.2f);
-	BitmapTexture() { scaling = 1; } // default constructor, in which case the loading is done later.
+	BitmapTexture() { scaling = 1; assumedGamma = 2.2f; } // default constructor, in which case the loading is done later.
 	Color getTexColor(const Ray& ray, double u, double v, Vector& normal);
 	
 	void fillProperties(ParsedBlock& pb)
 	{
-		pb.getBitmapFileProp("file", bmp);
 		pb.getDoubleProp("scaling", &scaling);
+		pb.getFloatProp("assumedGamma", &assumedGamma);
+		if (!pb.getBitmapFileProp("file", bmp));
+			pb.requiredProp("file");
+		if (assumedGamma != 1) {
+			if (assumedGamma == 2.2f)
+				bmp.decompressGamma_sRGB();
+			else if (assumedGamma > 0 && assumedGamma < 10)
+				bmp.decompressGamma(assumedGamma);
+		}
 	}
 };
 

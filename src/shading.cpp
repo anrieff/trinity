@@ -113,18 +113,6 @@ Color Phong::shade(Ray ray, const IntersectionData& data)
 	return diffuseColor * lightContrib + specular;
 }
 
-BitmapTexture::BitmapTexture(const char* fileName, double scaling, float assumedGamma)
-{
-	bmp.loadImage(fileName);
-	this->scaling = scaling;
-	if (assumedGamma != 1) {
-		if (assumedGamma == 2.2f)
-			bmp.decompressGamma_sRGB();
-		else if (assumedGamma > 0 && assumedGamma < 10)
-			bmp.decompressGamma(assumedGamma);
-	}
-}
-
 Color BitmapTexture::getTexColor(const Ray& ray, double u, double v, Vector& normal)
 {
 	u *= scaling;
