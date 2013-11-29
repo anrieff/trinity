@@ -31,9 +31,12 @@ protected:
 	Color* data;
 	
 	void remapRGB(std::function<float(float)>); // remap R, G, B channels by a function
+	void copy(const Bitmap& rhs);
 public:
 	Bitmap(); //!< Generates an empty bitmap
 	virtual ~Bitmap();
+	Bitmap(const Bitmap& rhs);
+	Bitmap& operator = (const Bitmap& rhs);
 	void freeMem(void); //!< Deletes the memory, associated with the bitmap
 	int getWidth(void) const; //!< Gets the width of the image (X-dimension)
 	int getHeight(void) const; //!< Gets the height of the image (Y-dimension)

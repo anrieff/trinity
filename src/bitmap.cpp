@@ -46,6 +46,28 @@ void Bitmap::freeMem(void)
 	width = height = -1;
 }
 
+void Bitmap::copy(const Bitmap& rhs)
+{
+	width = rhs.width;
+	height = rhs.height;
+	data = new Color[width * height];
+	memcpy(data, rhs.data, width * height * sizeof(Color));
+}
+
+Bitmap::Bitmap(const Bitmap& rhs)
+{
+	copy(rhs);
+}
+
+Bitmap& Bitmap::operator = (const Bitmap& rhs)
+{
+	if (this != &rhs) {
+		freeMem();
+		copy(rhs);
+	}
+	return *this;
+}
+
 int Bitmap::getWidth(void) const { return width; }
 int Bitmap::getHeight(void) const { return height; }
 bool Bitmap::isOK(void) const { return (data != NULL); }
