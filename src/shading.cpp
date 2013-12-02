@@ -69,8 +69,8 @@ Color Lambert::shade(Ray ray, const IntersectionData& data)
 		// get the Lambertian cosine of the angle between the geometry's normal and
 		// the direction to the light. This will scale the lighting:
 		double cosTheta = dot(lightDir, N);
-		
-		lightContrib += scene.settings.lightColor * scene.settings.lightPower / (data.p - scene.settings.lightPos).lengthSqr() * cosTheta;
+		if (cosTheta > 0)
+			lightContrib += scene.settings.lightColor * scene.settings.lightPower / (data.p - scene.settings.lightPos).lengthSqr() * cosTheta;
 	}
 	return diffuseColor * lightContrib;
 }
@@ -96,8 +96,8 @@ Color Phong::shade(Ray ray, const IntersectionData& data)
 
 		// baseLight is the light that "arrives" to the intersection point
 		Color baseLight = scene.settings.lightColor * scene.settings.lightPower / (data.p - scene.settings.lightPos).lengthSqr();
-		
-		lightContrib += baseLight * cosTheta; // lambertian contribution
+		if (cosTheta > 0)
+			lightContrib += baseLight * cosTheta; // lambertian contribution
 		
 		// R = vector after the ray from the light towards the intersection point
 		// is reflected at the intersection:
