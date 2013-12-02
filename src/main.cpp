@@ -47,10 +47,12 @@ Color raytrace(Ray ray)
 
 	data.dist = 1e99;
 	
+	// find closest intersection point:
 	for (int i = 0; i < (int) scene.nodes.size(); i++)
 		if (scene.nodes[i]->intersect(ray, data))
 			closestNode = scene.nodes[i];
 
+	// no intersection? use the environment, if present:
 	if (!closestNode) {
 		if (scene.environment != NULL) return scene.environment->getEnvironment(ray.dir);
 		return Color(0, 0, 0);
@@ -63,9 +65,11 @@ Color raytrace(Ray ray)
 		cout << "      UV coods:           " << data.u << ", " << data.v << endl;
 	}
 	
+	// if the node we hit has a bump map, apply it here:
 	if (closestNode->bump)
 		closestNode->bump->modifyNormal(data);
 	
+	// use the shader of the closest node to shade the intersection:
 	return closestNode->shader->shade(ray, data);
 }
 
@@ -81,6 +85,8 @@ bool testVisibility(const Vector& from, const Vector& to)
 	IntersectionData temp;
 	temp.dist = (to - from).length();
 	
+	// if there's any obstacle between from and to, the points aren't visible.
+	// we can stop at the first such object, since we don't care about the distance.
 	for (int i = 0; i < (int) scene.nodes.size(); i++)
 		if (scene.nodes[i]->intersect(ray, temp))
 			return false;

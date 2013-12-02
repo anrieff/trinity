@@ -47,11 +47,11 @@ class Mesh: public Geometry {
 	void initMesh(void);
 	
 	bool faceted; //!< whether the normals interpolation is disabled or not
-	bool backfaceCulling; 
-	bool hasNormals;
+	bool backfaceCulling; //!< whether the backfaceCulling optimization is enabled (default: yes)
+	bool hasNormals; //!< whether the .obj file contained normals. If not, no normal smoothing can be used.
 	Sphere* boundingSphere; //!< a bounding sphere, which optimizes our whole
 	
-	bool loadFromOBJ(const char* filename);
+	bool loadFromOBJ(const char* filename); //!< load a mesh from an .OBJ file.
 public:
 	Mesh() { faceted = false; boundingSphere = NULL; backfaceCulling = true; }
 	~Mesh();

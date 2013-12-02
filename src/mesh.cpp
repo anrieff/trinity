@@ -32,6 +32,7 @@ using std::vector;
 
 void Mesh::initMesh(void)
 {
+	// calculate a bounding sphere around the mesh:
 	Vector center(0, 0, 0);
 	double maxDist = 0;
 	for (size_t i = 0; i < vertices.size(); i++)
@@ -136,6 +137,7 @@ bool Mesh::intersect(Ray ray, IntersectionData& data)
 	return found;
 }
 
+// parse a string, convert to double. If string is empty, return 0
 static double getDouble(const string& s)
 {
 	double res;
@@ -144,6 +146,7 @@ static double getDouble(const string& s)
 	return res;
 }
 
+// parse a string, convert to int. If string is empty, return 0
 static int getInt(const string& s)
 {
 	int res;
@@ -152,6 +155,8 @@ static int getInt(const string& s)
 	return res;
 }
 
+// create a triangle by a OBJ file "f"-line, like "f 1//3 5//3 6//3". The three params in this
+// case will be "1//3", "5//3" and "6//3"
 Triangle::Triangle(std::string a, std::string b, std::string c)
 {
 	string items[3] = { a, b, c };
@@ -172,7 +177,9 @@ Triangle::Triangle(std::string a, std::string b, std::string c)
 
 void solve2D(double M[2][2], double H[2], double& p, double& q)
 {
+	// solve a 2x2 linear system:
 	// (p, q) * (M) = (H)
+	// where p, q are scalars ("unknowns"), M is a 2x2 matrix, and H is a 2-tuple.
 	
 	double Dcr = M[0][0] * M[1][1] - M[1][0] * M[0][1];
 	
@@ -208,6 +215,7 @@ bool Mesh::loadFromOBJ(const char* filename)
 		
 		if (tokens.empty()) continue;
 		
+		// v line - a vertex definition
 		if (tokens[0] == "v") {
 			Vector t(getDouble(tokens[1]),
 			         getDouble(tokens[2]),
@@ -216,6 +224,7 @@ bool Mesh::loadFromOBJ(const char* filename)
 			continue;
 		}
 
+		// vn line - a vertex normal definition
 		if (tokens[0] == "vn") {
 			hasNormals = true;
 			Vector t(getDouble(tokens[1]),
@@ -225,6 +234,7 @@ bool Mesh::loadFromOBJ(const char* filename)
 			continue;
 		}
 
+		// vt line - a texture coordinate definition
 		if (tokens[0] == "vt") {
 			Vector t(getDouble(tokens[1]),
 			         getDouble(tokens[2]),
@@ -233,6 +243,7 @@ bool Mesh::loadFromOBJ(const char* filename)
 			continue;
 		}
 		
+		// f line - a face definition
 		if (tokens[0] == "f") {
 			int n = tokens.size() - 3;
 			
@@ -243,15 +254,19 @@ bool Mesh::loadFromOBJ(const char* filename)
 		}
 	}
 	
+	// preprocess all triangles:
 	for (int i = 0; i < (int) triangles.size(); i++) {
 		Triangle& T = triangles[i];
 		
 		Vector AB = vertices[T.v[1]] - vertices[T.v[0]];
 		Vector AC = vertices[T.v[2]] - vertices[T.v[0]];
 		
+		// compute the geometric normal of this triangle:
 		T.gnormal = AB ^ AC;
 		T.gnormal.normalize();
 		
+		
+		// compute the dNd(x|y) vectors of this triangle:
 		double px, py, qx, qy;
 		
 		Vector AB_2d = uvs[T.t[1]] - uvs[T.t[0]];
@@ -263,9 +278,9 @@ bool Mesh::loadFromOBJ(const char* filename)
 		};
 		double h[2] = { 1, 0 };
 		
-		solve2D(mat, h, px, qx); // (AB_2d * px + AC_2d * qx == (1, 0)
+		solve2D(mat, h, px, qx); // (AB_2d * px + AC_2d * qx == (1, 0))
 		h[0] = 0; h[1] = 1;
-		solve2D(mat, h, py, qy); // (AB_2d * py + AC_2d * qy == (0, 1)
+		solve2D(mat, h, py, qy); // (AB_2d * py + AC_2d * qy == (0, 1))
 		
 		T.dNdx = AB * px + AC * qx;
 		T.dNdx.normalize();
@@ -276,4 +291,3 @@ bool Mesh::loadFromOBJ(const char* filename)
 	fclose(f);
 	return true;
 }
-
