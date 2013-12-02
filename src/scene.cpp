@@ -107,12 +107,6 @@ SyntaxError::SyntaxError() {
 	msg[0] = 0;
 }
 
-SyntaxError::SyntaxError(int line, const char* msg1, const char* msg2) {
-	this->line = line;
-	strncpy(msg, msg1, sizeof(msg));
-	strncat(msg, msg2, sizeof(msg) - strlen(msg) - 1);
-}
-
 SyntaxError::SyntaxError(int line, const char* format, ...)
 {
 	this->line = line;

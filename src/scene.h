@@ -209,7 +209,6 @@ struct SyntaxError {
 	char msg[128];
 	int line;
 	SyntaxError();
-	SyntaxError(int line, const char* msg1, const char* msg2);
 	SyntaxError(int line, const char* format, ...);
 };
 
