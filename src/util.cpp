@@ -21,6 +21,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include <string>
 using namespace std;
 
@@ -46,10 +50,12 @@ string extensionUpper(const char* fileName)
 	return "";
 }
 
-bool fileExists(const char* filename)
+bool fileExists(const char* fn)
 {
-	FILE* temp = fopen(filename, "r");
-	if (!temp) return false;
-	fclose(temp);
-	return true;
+	char temp[512];
+	strcpy(temp, fn);
+	int l = (int) strlen(temp);
+	if (l && temp[l - 1] == '/') temp[--l] = 0;
+	struct stat st;
+	return (0 == stat(temp, &st));
 }
