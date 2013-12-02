@@ -362,3 +362,20 @@ void Bitmap::decompressGamma(float gamma)
 		return powf(x, gamma);
 	});
 }
+
+void Bitmap::differentiate(void)
+{
+	Bitmap result;
+	result.generateEmptyImage(width, height);
+	
+	for (int y = 0; y < height; y++)
+		for (int x = 0; x < width; x++) {
+			float me = getPixel(x, y).intensity();
+			float right = getPixel((x + 1) % width, y).intensity();
+			float bottom = getPixel(x, (y + 1) % height).intensity();
+			
+			result.setPixel(x, y, Color(me - right, me - bottom, 0.0f));
+		}
+	(*this) = result;
+}
+

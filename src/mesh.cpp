@@ -21,25 +21,17 @@
 #include <stdio.h>
 #include <string.h>
 #include <algorithm>
+#include <string>
+#include <vector>
 #include "mesh.h"
 #include "constants.h"
 #include "color.h"
 using std::max;
-
-Mesh::Mesh(double height, bool tetraeder)
-{
-	this->height = height;
-	this->tetraeder = tetraeder;
-	faceted = false;
-	initMesh();
-	boundingSphere = NULL;
-}
+using std::string;
+using std::vector;
 
 void Mesh::initMesh(void)
 {
-	if (tetraeder) generateTetraeder(); // if 'algorithm' is 1, generate a tetraeder; otherwise, a soccer ball.
-	else generateTruncatedIcosahedron();
-	
 	Vector center(0, 0, 0);
 	double maxDist = 0;
 	for (size_t i = 0; i < vertices.size(); i++)
@@ -60,88 +52,10 @@ const char* Mesh::getName()
 	return temp;
 }
 
-void Mesh::generateTetraeder(void)
-{
-	double hBase = 0;
-	double hTop = height;
-	Vector center(0, height * 0.25, 0);
-	for (int i = 0; i < 3; i++) {
-		double angle = i / 3.0 * 2 * PI;
-		vertices.push_back(Vector(cos(angle), hBase, sin(angle)));
-	}
-	vertices.push_back(Vector(0, hTop, 0));
-	for (int i = 0; i < 4; i++) {
-		Vector t = vertices[i] - center;
-		t.normalize();
-		normals.push_back(t);
-		uvs.push_back(Vector((PI + atan2(t.z, t.x)) / PI, 1.0 - (PI/2 + asin(t.y)) / PI, 0));
-	}
-	for (int i = 0; i < 4; i++) {
-		Triangle t;
-		int k = 0;
-		for (int j = 0; j < 4; j++) if (j != i) {
-			t.v[k] = j;
-			t.n[k] = j;
-			t.t[k] = j;
-			k++;
-		}
-		Vector a = vertices[t.v[1]] - vertices[t.v[0]];
-		Vector b = vertices[t.v[2]] - vertices[t.v[0]];
-		t.gnormal = a ^ b;
-		t.gnormal.normalize();
-		triangles.push_back(t);
-	}
-}
-
-void Mesh::generateTruncatedIcosahedron(void)
-{
-	FILE* f = fopen("data/truncatedIcosahedron.txt", "rt");
-	if (!f) return;
-	Vector a, b, c;
-	Color z;
-	int i = 0;
-	Vector center(0, 0, 0);
-	while (12 == fscanf(f, "%lf%lf%lf%lf%lf%lf%lf%lf%lf%f%f%f", &a.x, &a.y, &a.z, &b.x, &b.y, &b.z,
-	                    &c.x, &c.y, &c.z, &z.r, &z.g, &z.b)) {
-		vertices.push_back(a);
-		vertices.push_back(b);
-		vertices.push_back(c);
-		center += a;
-		center += b;
-		center += c;
-		Triangle T;
-		for (int j = 0; j < 3; j++) {
-			T.v[j] = T.n[j] = T.t[j] = 3 * i + j;
-		}
-		if (z.intensity() < 0.5f) {
-			uvs.push_back(Vector(-0.1, 0.1, 0));
-			uvs.push_back(Vector(-0.1, 0.1, 0));
-			uvs.push_back(Vector(-0.1, 0.1, 0));
-		} else {
-			uvs.push_back(Vector(0.1, 0.1, 0));
-			uvs.push_back(Vector(0.1, 0.1, 0));
-			uvs.push_back(Vector(0.1, 0.1, 0));
-		}
-		T.gnormal = (b - a) ^ (c - a);
-		T.gnormal.normalize();
-		triangles.push_back(T);
-		i++;
-	}
-	fclose(f);
-	center /= (3*i);
-	for (int i = 0; i < (int) vertices.size(); i++) {
-		vertices[i] = vertices[i] - center;
-		vertices[i] *= 0.005;
-		Vector t = vertices[i];
-		t.normalize();
-		normals.push_back(t);
-	}
-}
-
 bool Mesh::intersectTriangle(const Ray& ray, IntersectionData& data, Triangle& T)
 {
 	bool inSameDirection = (dot(ray.dir, T.gnormal) > 0);
-	if (inSameDirection) return false; // backface culling
+	if (backfaceCulling && inSameDirection) return false; // backface culling
 	//              B                     A
 	Vector AB = vertices[T.v[1]] - vertices[T.v[0]];
 	Vector AC = vertices[T.v[2]] - vertices[T.v[0]];
@@ -184,7 +98,7 @@ bool Mesh::intersectTriangle(const Ray& ray, IntersectionData& data, Triangle& T
 	data.g = this;
 	
 	double lambda1 = 1 - lambda2 - lambda3;
-	if (faceted) {
+	if (faceted || !hasNormals) {
 		data.normal = T.gnormal;
 	} else {
 		// interpolate normals using the barycentric coords:
@@ -200,6 +114,8 @@ bool Mesh::intersectTriangle(const Ray& ray, IntersectionData& data, Triangle& T
 				uvs[T.t[2]] * lambda3;
 	data.u = uv.x;
 	data.v = uv.y;
+	data.dNdx = T.dNdx;
+	data.dNdy = T.dNdy;
 	return true;
 }
 
@@ -219,3 +135,145 @@ bool Mesh::intersect(Ray ray, IntersectionData& data)
 	
 	return found;
 }
+
+static double getDouble(const string& s)
+{
+	double res;
+	if (s == "") return 0;
+	sscanf(s.c_str(), "%lf", &res);
+	return res;
+}
+
+static int getInt(const string& s)
+{
+	int res;
+	if (s == "") return 0;
+	sscanf(s.c_str(), "%d", &res);
+	return res;
+}
+
+Triangle::Triangle(std::string a, std::string b, std::string c)
+{
+	string items[3] = { a, b, c };
+	
+	for (int i = 0; i < 3; i++) {
+		const string& item = items[i];
+		
+		vector<string> subItems = split(item, '/');
+		v[i] = getInt(subItems[0]);
+		if (subItems.size() > 1) {
+			t[i] = getInt(subItems[1]);
+		} else t[i] = 0;
+		if (subItems.size() > 2) {
+			n[i] = getInt(subItems[2]);
+		} else n[i] = 0;
+	}
+}
+
+void solve2D(double M[2][2], double H[2], double& p, double& q)
+{
+	// (p, q) * (M) = (H)
+	
+	double Dcr = M[0][0] * M[1][1] - M[1][0] * M[0][1];
+	
+	double rDcr = 1 / Dcr;
+	
+	p = (H[0] * M[1][1] - H[1] * M[0][1]) * rDcr;
+	q = (M[0][0] * H[1] - M[1][0] * H[0]) * rDcr;
+}
+
+
+
+bool Mesh::loadFromOBJ(const char* filename)
+{
+	FILE* f = fopen(filename, "rt");
+	
+	if (!f) {
+		printf("error: no such file: %s", filename);
+		return false;
+	}
+	
+	vertices.push_back(Vector(0, 0, 0));
+	uvs.push_back(Vector(0, 0, 0));
+	normals.push_back(Vector(0, 0, 0));
+	hasNormals = false;
+	
+	
+	char line[2048];
+	
+	while (fgets(line, sizeof(line), f)) {
+		if (line[0] == '#') continue;
+		
+		vector<string> tokens = tokenize(string(line));
+		
+		if (tokens.empty()) continue;
+		
+		if (tokens[0] == "v") {
+			Vector t(getDouble(tokens[1]),
+			         getDouble(tokens[2]),
+			         getDouble(tokens[3]));
+			vertices.push_back(t);
+			continue;
+		}
+
+		if (tokens[0] == "vn") {
+			hasNormals = true;
+			Vector t(getDouble(tokens[1]),
+			         getDouble(tokens[2]),
+			         getDouble(tokens[3]));
+			normals.push_back(t);
+			continue;
+		}
+
+		if (tokens[0] == "vt") {
+			Vector t(getDouble(tokens[1]),
+			         getDouble(tokens[2]),
+			         0);
+			uvs.push_back(t);
+			continue;
+		}
+		
+		if (tokens[0] == "f") {
+			int n = tokens.size() - 3;
+			
+			for (int i = 0; i < n; i++) {
+				Triangle T(tokens[1], tokens[2 + i], tokens[3 + i]);
+				triangles.push_back(T);
+			}
+		}
+	}
+	
+	for (int i = 0; i < (int) triangles.size(); i++) {
+		Triangle& T = triangles[i];
+		
+		Vector AB = vertices[T.v[1]] - vertices[T.v[0]];
+		Vector AC = vertices[T.v[2]] - vertices[T.v[0]];
+		
+		T.gnormal = AB ^ AC;
+		T.gnormal.normalize();
+		
+		double px, py, qx, qy;
+		
+		Vector AB_2d = uvs[T.t[1]] - uvs[T.t[0]];
+		Vector AC_2d = uvs[T.t[2]] - uvs[T.t[0]];
+		
+		double mat[2][2] = {
+			{ AB_2d.x, AC_2d.x },
+			{ AB_2d.y, AC_2d.y },
+		};
+		double h[2] = { 1, 0 };
+		
+		solve2D(mat, h, px, qx); // (AB_2d * px + AC_2d * qx == (1, 0)
+		h[0] = 0; h[1] = 1;
+		solve2D(mat, h, py, qy); // (AB_2d * py + AC_2d * qy == (0, 1)
+		
+		T.dNdx = AB * px + AC * qx;
+		T.dNdx.normalize();
+		T.dNdy = AB * py + AC * qy;
+		T.dNdy.normalize();
+	}
+	
+	fclose(f);
+	return true;
+}
+

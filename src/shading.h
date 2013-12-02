@@ -51,7 +51,8 @@ public:
 	virtual ~Texture() {}
 	
 	virtual Color getTexColor(const Ray& ray, double u, double v, Vector& normal) = 0;
-
+	virtual void modifyNormal(IntersectionData& data) {}
+	
 	// from SceneElement:
 	ElementType getElementType() const { return ELEM_TEXTURE; }
 };
@@ -191,6 +192,26 @@ public:
 	{
 		pb.getFloatProp("ior", &ior, 1e-6, 10);
 	}
+};
+
+class BumpTexture: public Texture {
+	Bitmap bmp;
+	float strength;
+public:
+	BumpTexture() { strength = 1; }
+	
+	void modifyNormal(IntersectionData& data);
+	Color getTexColor(const Ray& ray, double u, double v, Vector& normal)
+	{
+		return Color(0, 0, 0);
+	}
+	void fillProperties(ParsedBlock& pb)
+	{
+		pb.getBitmapFileProp("file", bmp);
+		bmp.differentiate();
+		pb.getFloatProp("strength", &strength);
+	}
+	
 };
 
 #endif // __SHADING_H__

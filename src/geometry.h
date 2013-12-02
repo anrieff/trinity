@@ -30,6 +30,7 @@ class Geometry;
 struct IntersectionData {
 	Vector p; //!< intersection point in the world-space
 	Vector normal; //!< the normal of the geometry at the intersection point
+	Vector dNdx, dNdy; 
 	double dist; //!< before intersect(): the max dist to look for intersection; after intersect() - the distance found
 	
 	double u, v; //!< 2D UV coordinates for texturing, etc.
@@ -181,6 +182,7 @@ public:
 };
 
 class Shader;
+class BumpTexture;
 
 /// A Node, which holds a geometry, linked to a shader.
 /// it is also allowed to use any Intersectable in place of the geometry - even another node.
@@ -189,9 +191,10 @@ public:
 	Geometry* geom;
 	Shader* shader;
 	Transform transform;
+	Texture* bump;
 	
 	Node() {}
-	Node(Geometry* g, Shader* s) { geom = g; shader = s; }
+	Node(Geometry* g, Shader* s) { geom = g; shader = s; bump = NULL; }
 	
 	// from Intersectable:
 	bool intersect(Ray ray, IntersectionData& data);
@@ -204,6 +207,7 @@ public:
 		pb.getGeometryProp("geometry", &geom);
 		pb.getShaderProp("shader", &shader);
 		pb.getTransformProp(transform);
+		pb.getTextureProp("bump", &bump);
 	}
 };
 

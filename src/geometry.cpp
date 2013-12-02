@@ -225,6 +225,8 @@ bool Node::intersect(Ray ray, IntersectionData& data)
 	}
 	// The intersection found is in object space, convert to world space:
 	data.normal = normalize(transform.direction(data.normal));
+	data.dNdx = normalize(transform.direction(data.dNdx));
+	data.dNdy = normalize(transform.direction(data.dNdy));
 	data.p = transform.point(data.p);
 	data.dist /= rayDirLength;  // (5)
 	return true;

@@ -19,12 +19,12 @@ GlobalSettings {
 
 // 2. A camera
 Camera camera {
-	pos     (90, 130, -320)
+	pos     (90, 160, -320)
 	aspect   1.33333
 	yaw      15
-	pitch   -5
+	pitch   -10
 	roll     0
-	fov     60
+	fov     75
 }
 
 // 3. The floor node:
@@ -77,38 +77,65 @@ Layered glass {
 
 // 4. The mesh:
 Mesh mesh {
-	file        "geom/3pyramid.obj"
+//	file        "geom/3pyramid.obj"
 //	file        "geom/teapot_lowres.obj"
 //	file        "geom/heart.obj"
 //	file		"geom/newwine.obj"
-//	file	 	"geom/truncated_cube.obj"
+	file	 	"geom/truncated_cube.obj"
 }
 
 Checker checker {
 	color1 (0.70, 0.70, 0.70)
 	color2 (0.15, 0.15, 0.15)
-	size 0.2
+	size 0.5
 }
 
 Lambert checker_shader {
 	texture checker
 }
 
+BitmapTexture heart_lava {
+	file "texture/zar-texture.bmp"
+}
+
+Lambert heart_shader {
+	texture heart_lava
+}
+
+Reflection reflection {
+}
+
+Refraction refraction {
+	ior 1.5
+}
+
+Fresnel fresnel {
+	ior 1.5
+}
+
+Layered glass {
+	layer refraction (1, 1, 1)
+	layer reflection (1, 1, 1) fresnel
+}
+
 Lambert lambert {
 	color (0.7, 0.7, 0.7)
 }
 
-/*
-BumpTexture bump {
-	file "texture/zar-dots.bmp"
-	strength 10
+
+BumpTexture bumptex {
+	file "texture/zar-bump.bmp"
+	strength 15
 }
-*/
+
 
 Node soccer_ball {
 	geometry     mesh
-	shader       lambert
-	scale        (60, 60, 60)
+	shader       heart_shader
+	scale        (15, 15, 15)
+	rotate       (90, 0, 0)
+	translate    (0, 60, 0)
+	bump bumptex
 }
 
 

@@ -30,6 +30,9 @@ struct Triangle {
 	int n[3]; //!< holds indices to the three normals of the triangle (indexes in the `normals' array)
 	int t[3]; //!< holds indices to the three texture coordinates of the triangle (indexes in the `uvs' array)
 	Vector gnormal; //!< The geometric normal of the mesh (AB ^ AC, normalized)
+	Vector dNdx, dNdy;
+	
+	Triangle(std::string a, std::string b, std::string c);
 };
 
 class Mesh: public Geometry {
@@ -37,20 +40,20 @@ class Mesh: public Geometry {
 	std::vector<Vector> normals; //!< An array with all normals in the mesh
 	std::vector<Vector> uvs; //!< An array with all texture coordinates in the mesh
 	std::vector<Triangle> triangles; //!< An array that holds all triangles
-	void generateTruncatedIcosahedron(void);
-	void generateTetraeder(void);
 	
 	// intersect a ray with a single triangle. Return true if an intersection exists, and it's
 	// closer to the minimum distance, stored in data.dist
 	bool intersectTriangle(const Ray& ray, IntersectionData& data, Triangle& T);
 	void initMesh(void);
 	
-	double height;
-	bool faceted, tetraeder; //!< whether the normals interpolation is disabled or not
+	bool faceted; //!< whether the normals interpolation is disabled or not
+	bool backfaceCulling; 
+	bool hasNormals;
 	Sphere* boundingSphere; //!< a bounding sphere, which optimizes our whole
+	
+	bool loadFromOBJ(const char* filename);
 public:
-	Mesh() { faceted = false; boundingSphere = NULL; }
-	Mesh(double height, bool tetraeder);
+	Mesh() { faceted = false; boundingSphere = NULL; backfaceCulling = true; }
 	~Mesh();
 	const char* getName();
 	bool intersect(Ray ray, IntersectionData& info);
@@ -60,9 +63,13 @@ public:
 	
 	void fillProperties(ParsedBlock& pb)
 	{
-		pb.getDoubleProp("height", &height);
-		pb.getBoolProp("tetraeder", &tetraeder);
+		char fileName[256];
+		if (pb.getFilenameProp("file", fileName))
+			loadFromOBJ(fileName);
+		else
+			pb.requiredProp("file");
 		pb.getBoolProp("faceted", &faceted);
+		pb.getBoolProp("backfaceCulling", &backfaceCulling);
 		initMesh();
 	}
 };

@@ -280,5 +280,9 @@ struct Scene {
 
 extern Scene scene;
 
+std::vector<std::string> tokenize(std::string s);
+std::vector<std::string> split(std::string s, char separator);
+
+
 
 #endif // __SCENE_H__

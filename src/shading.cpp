@@ -113,15 +113,20 @@ Color Phong::shade(Ray ray, const IntersectionData& data)
 	return diffuseColor * lightContrib + specular;
 }
 
-Color BitmapTexture::getTexColor(const Ray& ray, double u, double v, Vector& normal)
+static Color getTexValue(const Bitmap& bmp, double u, double v)
 {
-	u *= scaling;
-	v *= scaling;
 	u = u - floor(u);
 	v = v - floor(v); // u, v range in [0..1)
 	float tx = (float) u * bmp.getWidth(); // u is in [0..textureWidth)
 	float ty = (float) v * bmp.getHeight(); // v is in [0..textureHeight)
 	return bmp.getFilteredPixel(tx, ty); // fetch from the bitmap with bilinear filtering
+}
+
+Color BitmapTexture::getTexColor(const Ray& ray, double u, double v, Vector& normal)
+{
+	u *= scaling;
+	v *= scaling;
+	return getTexValue(bmp, u, v);
 }
 
 Color Refl::shade(Ray ray, const IntersectionData& data)
@@ -286,4 +291,10 @@ Color Fresnel::getTexColor(const Ray& ray, double u, double v, Vector& normal)
 	return Color(fr, fr, fr);
 }
 
-
+void BumpTexture::modifyNormal(IntersectionData& data)
+{
+	Color bumpVal = getTexValue(bmp, data.u, data.v) * strength;
+	
+	data.normal += data.dNdx * bumpVal[0] + data.dNdy * bumpVal[1];
+	data.normal.normalize();
+}

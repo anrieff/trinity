@@ -66,6 +66,8 @@ public:
 	
 	void decompressGamma_sRGB(void); //!< assuming the pixel data is in sRGB, decompress to linear RGB values
 	void decompressGamma(float gamma); //!< as above, but assume a specific gamma value
+	
+	void differentiate(void);
 };
 
 #endif // __BITMAP_H__

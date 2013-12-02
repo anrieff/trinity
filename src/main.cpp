@@ -63,6 +63,9 @@ Color raytrace(Ray ray)
 		cout << "      UV coods:           " << data.u << ", " << data.v << endl;
 	}
 	
+	if (closestNode->bump)
+		closestNode->bump->modifyNormal(data);
+	
 	return closestNode->shader->shade(ray, data);
 }
 
@@ -250,7 +253,7 @@ void handleMouse(SDL_MouseButtonEvent *mev)
 	printf("Raytracing completed!\n");
 }
 
-const char* defaultScene = "data/lecture7.trinity";
+const char* defaultScene = "data/testmesh.trinity";
 
 static bool parseCmdLine(int argc, char** argv)
 {

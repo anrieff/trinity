@@ -859,6 +859,7 @@ SceneElement* DefaultSceneParser::newSceneElement(const char* className)
 	if (!strcmp(className, "CubemapEnvironment")) return new CubemapEnvironment;
 	if (!strcmp(className, "Camera")) return new Camera;
 	if (!strcmp(className, "Mesh")) return new Mesh;
+	if (!strcmp(className, "BumpTexture")) return new BumpTexture;
 	return NULL;
 }
 
