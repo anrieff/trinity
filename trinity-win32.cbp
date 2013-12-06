@@ -52,6 +52,7 @@
 			<Add directory="L:/SDL-1.2.15/lib" />
 			<Add directory="L:/OpenEXR-mingw/lib" />
 		</Linker>
+		<Unit filename="src/bbox.h" />
 		<Unit filename="src/bitmap.cpp" />
 		<Unit filename="src/bitmap.h" />
 		<Unit filename="src/camera.cpp" />
@@ -62,6 +63,8 @@
 		<Unit filename="src/environment.h" />
 		<Unit filename="src/geometry.cpp" />
 		<Unit filename="src/geometry.h" />
+		<Unit filename="src/heightfield.cpp" />
+		<Unit filename="src/heightfield.h" />
 		<Unit filename="src/main.cpp" />
 		<Unit filename="src/matrix.cpp" />
 		<Unit filename="src/matrix.h" />
