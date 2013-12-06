@@ -1,0 +1,128 @@
+//
+// A sample scene using a heightfield
+//
+
+GlobalSettings {
+	frameWidth      800
+	frameHeight     600
+	ambientLight    (0.25, 0.25, 0.25)
+	lightPos	(6000, 2000, -30)
+	lightPower  50000000
+	lightColor      (1, 1, 1)
+}
+
+// Island - sunset view
+Camera camera {
+	pos      (100, 80, 600)
+	aspect   1.33333
+	yaw      -153
+	pitch   -15
+	roll     0
+	fov      105
+}
+
+/*
+// Island - front view
+Camera camera {
+	pos      (380.1, 60, -180)
+	aspect   1.33333
+	yaw      20
+	pitch    -8
+	roll     0
+	fov      90
+}
+*/
+/*
+// Island - top view
+Camera camera {
+	pos      (180.1, 110, 210)
+	aspect   1.33333
+	yaw      -60
+	pitch    -30
+	roll     0
+	fov      110
+}
+*/
+/*
+// Bay view
+Camera camera {
+	pos      (200.1, 65, 550)
+	aspect   1.33333
+	yaw      -170
+	pitch    5
+	roll     0
+	fov      110
+}
+*/
+
+CubemapEnvironment {
+	folder "env/ocean"
+}
+
+Plane water {
+}
+
+Bumps waterBumps {
+	strength 0.2
+}
+
+Lambert ocean_floor {
+	color  (0.1448, 0.4742, 0.6804)
+}
+
+Plane ocean_floor {
+	y 9.2
+	limit 3000
+}
+
+Node ocean_floor {
+	geometry ocean_floor
+	shader ocean_floor
+}
+
+Refraction refr_water {
+	ior 1.33
+	color (0.9, 0.9, 0.9)
+}
+
+Fresnel fresnel {
+	ior 1.33
+}
+
+Reflection refl {
+	color (0.9, 0.9, 0.9)
+}
+
+Layered water {
+	layer refr_water (1, 1, 1)
+	layer refl (1, 1, 1) fresnel
+}
+
+Node water {
+	geometry water
+	bump waterBumps
+	shader water
+	translate (0, 32.5, 0)
+	scale (3, 3, 3)
+}
+
+BitmapTexture bmp {
+	file "texture/hf_color.bmp"
+}
+
+Lambert island_shader {
+	color (1, 1, 1)
+	texture bmp
+}
+
+Heightfield island {
+	file "texture/heightfield.bmp"
+	blur 2.5
+}
+
+Node island {
+	geometry island
+	shader island_shader
+	scale (1, 200, 1)
+}
+

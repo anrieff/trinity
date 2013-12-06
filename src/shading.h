@@ -211,6 +211,20 @@ public:
 		bmp.differentiate();
 		pb.getFloatProp("strength", &strength);
 	}
+};
+
+// a texture that generates a slight random bumps on any geometry, which computes dNdx, dNdy
+class Bumps: public Texture {
+	float strength;
+public:
+	Bumps() { strength = 0; }
+	
+	void modifyNormal(IntersectionData& data);
+	Color getTexColor(const Ray& ray, double u, double v, Vector& normal);
+	void fillProperties(ParsedBlock& pb)
+	{
+		pb.getFloatProp("strength", &strength);
+	}
 	
 };
 

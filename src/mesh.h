@@ -23,17 +23,7 @@
 #include <vector>
 #include "vector.h"
 #include "geometry.h"
-
-/// A structure to represent a single triangle in the mesh
-struct Triangle {
-	int v[3]; //!< holds indices to the three vertices of the triangle (indexes in the `vertices' array in the Mesh)
-	int n[3]; //!< holds indices to the three normals of the triangle (indexes in the `normals' array)
-	int t[3]; //!< holds indices to the three texture coordinates of the triangle (indexes in the `uvs' array)
-	Vector gnormal; //!< The geometric normal of the mesh (AB ^ AC, normalized)
-	Vector dNdx, dNdy;
-	
-	Triangle(std::string a, std::string b, std::string c);
-};
+#include "bbox.h"
 
 class Mesh: public Geometry {
 	std::vector<Vector> vertices; //!< An array with all vertices in the mesh

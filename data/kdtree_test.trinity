@@ -1,0 +1,90 @@
+//
+// A scene that tests our K-d tree implementation
+//
+//
+
+GlobalSettings {
+	frameWidth      640
+	frameHeight     480
+	ambientLight    (0.28, 0.30, 0.35)
+	lightPos	(320, 160, -280)
+	lightPower	130000
+	lightColor      (1, 1, 1)
+}
+
+Camera camera {
+	pos      (30, 100, -110)
+	aspect   1.33333
+	yaw      19
+	pitch   -25
+	roll     0
+	fov      125
+}
+
+Cube c0 {
+	side 230
+}
+
+Cube c1 {
+	side 230.001     // just a tiny bit larger than c0; so that it encompasses it in the XZ dimension
+	center    (0, -11.5, 0)
+}
+
+CsgDiff floor {
+	left  c0
+	right c1
+}
+
+BitmapTexture tex {
+	file     "texture/wood.bmp"
+	scaling  0.005
+}
+
+Lambert lambert {
+	color    (0.66, 0.66, 0.66)
+	texture  tex
+}
+
+Reflection refl {
+}
+
+Layered layered {
+	layer lambert (1, 1, 1)
+	layer    refl (0.2, 0.2, 0.2)
+}
+
+Node floor {
+	geometry    floor
+	shader      layered
+	translate   (0, -115, 0)
+}
+
+Checker checker {
+	color1 (0.9, 0.1, 0.1)
+	color2 (0.05, 0.05, 0.07)
+	size 0.1
+}
+
+Lambert teapot_tex {
+	color    (1, 1, 1)
+	texture  checker
+}
+
+/*
+ * The options below determine what is being tested
+ * 1) the "lowres" teapot has ~1,000 triangles
+ * 2) the "hires" teapot has ~10,000 triangles
+ * 3) change the "useKDTree" flag to test the speed with or without the K-d tree
+*/
+Mesh teapot {
+	//file "geom/teapot_lowres.obj"
+	file "geom/teapot_hires.obj"
+//	useKDTree true
+}
+
+Node teapot {
+	geometry    teapot
+	shader      teapot_tex
+	rotate		(0, 0, 0)
+	scale       (60, 60, 60)
+}

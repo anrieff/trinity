@@ -40,6 +40,7 @@
 #include "sdl.h"
 #include "mesh.h"
 #include "random_generator.h"
+#include "heightfield.h"
 #include <assert.h>
 using std::vector;
 using std::string;
@@ -854,6 +855,8 @@ SceneElement* DefaultSceneParser::newSceneElement(const char* className)
 	if (!strcmp(className, "Camera")) return new Camera;
 	if (!strcmp(className, "Mesh")) return new Mesh;
 	if (!strcmp(className, "BumpTexture")) return new BumpTexture;
+	if (!strcmp(className, "Bumps")) return new Bumps;
+	if (!strcmp(className, "Heightfield")) return new Heightfield;
 	return NULL;
 }
 

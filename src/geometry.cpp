@@ -48,6 +48,8 @@ bool Plane::intersect(Ray ray, IntersectionData& data)
 		data.p = p;
 		data.dist = mult;
 		data.normal = Vector(0, 1, 0);
+		data.dNdx = Vector(1, 0, 0);
+		data.dNdy = Vector(0, 0, 1);
 		data.u = data.p.x;
 		data.v = data.p.z;
 		data.g = this;

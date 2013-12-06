@@ -298,3 +298,24 @@ void BumpTexture::modifyNormal(IntersectionData& data)
 	data.normal += data.dNdx * bumpVal[0] + data.dNdy * bumpVal[1];
 	data.normal.normalize();
 }
+
+void Bumps::modifyNormal(IntersectionData& data)
+{
+	if (strength > 0) {
+		float freqX[3] = { 0.5, 1.21, 1.9 }, freqZ[3] = { 0.4, 1.13, 1.81 };
+		float fm = 0.2;
+		float intensityX[3] = { 0.1, 0.08, 0.05 }, intensityZ[3] = { 0.1, 0.08, 0.05 };
+		double dx = 0, dy = 0;
+		for (int i = 0; i < 3; i++) {
+			dx += sin(fm * freqX[i] * data.u) * intensityX[i] * strength; 
+			dy += sin(fm * freqZ[i] * data.v) * intensityZ[i] * strength;
+		}
+		data.normal += dx * data.dNdx + dy * data.dNdy;
+		data.normal.normalize();
+	}
+}
+
+Color Bumps::getTexColor(const Ray& ray, double u, double v, Vector& normal)
+{
+	return Color(0, 0, 0);
+}
