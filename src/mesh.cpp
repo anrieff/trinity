@@ -55,6 +55,7 @@ void Mesh::initMesh(void)
 
 Mesh::~Mesh()
 {
+	if (kdroot) delete kdroot;
 }
 
 const char* Mesh::getName()
