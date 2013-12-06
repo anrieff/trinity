@@ -80,8 +80,9 @@ Mesh mesh {
 //	file        "geom/3pyramid.obj"
 //	file        "geom/teapot_lowres.obj"
 //	file        "geom/heart.obj"
-//	file		"geom/newwine.obj"
-	file	 	"geom/truncated_cube.obj"
+	file		"geom/newwine.obj"
+//	file	 	"geom/truncated_cube.obj"
+	backfaceCulling false
 }
 
 Checker checker {
@@ -131,11 +132,11 @@ BumpTexture bumptex {
 
 Node soccer_ball {
 	geometry     mesh
-	shader       heart_shader
-	scale        (15, 15, 15)
+	shader       glass
+	scale        (150, 150, 150)
 	rotate       (90, 0, 0)
-	translate    (0, 60, 0)
-	bump bumptex
+	translate    (0, 0, 0)
+//	bump bumptex
 }
 
 

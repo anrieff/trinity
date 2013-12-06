@@ -79,7 +79,7 @@ Lambert teapot_tex {
 Mesh teapot {
 	//file "geom/teapot_lowres.obj"
 	file "geom/teapot_hires.obj"
-//	useKDTree true
+	useKDTree true
 }
 
 Node teapot {
