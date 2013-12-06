@@ -25,6 +25,37 @@
 #include "geometry.h"
 #include "bbox.h"
 
+struct KDTreeNode {
+	Axis axis;
+	double splitPos;
+	union {
+		std::vector<int>* triangles; // 1 pointer to list of triangle indices
+		KDTreeNode* children;    // 1 pointer to TWO children
+	};
+	
+	KDTreeNode() {}
+	void initLeaf(const std::vector<int>& triangleList)
+	{
+		axis = AXIS_NONE;
+		splitPos = 0;
+		triangles = new std::vector<int>(triangleList);
+	}
+	void initBinary(Axis axis, double splitPos)
+	{
+		this->axis = axis;
+		this->splitPos = splitPos;
+		children = new KDTreeNode[2];
+	}
+	~KDTreeNode()
+	{
+		if (axis == AXIS_NONE) {
+			delete triangles;
+		} else {
+			delete [] children;
+		}
+	}
+};
+
 class Mesh: public Geometry {
 	std::vector<Vector> vertices; //!< An array with all vertices in the mesh
 	std::vector<Vector> normals; //!< An array with all normals in the mesh
@@ -39,11 +70,17 @@ class Mesh: public Geometry {
 	bool faceted; //!< whether the normals interpolation is disabled or not
 	bool backfaceCulling; //!< whether the backfaceCulling optimization is enabled (default: yes)
 	bool hasNormals; //!< whether the .obj file contained normals. If not, no normal smoothing can be used.
-	Sphere* boundingSphere; //!< a bounding sphere, which optimizes our whole
+	BBox boundingBox; //!< a bounding box, which optimizes our whole
 	
 	bool loadFromOBJ(const char* filename); //!< load a mesh from an .OBJ file.
+	bool useKDTree;
+	KDTreeNode* kdroot;
+	
+	
+	void build(KDTreeNode* node, const BBox& bbox, const std::vector<int>& triangles, int depth);
+	bool intersectKD(KDTreeNode* node, const BBox& bbox, const Ray& ray, IntersectionData& data);
 public:
-	Mesh() { faceted = false; boundingSphere = NULL; backfaceCulling = true; }
+	Mesh() { faceted = false; backfaceCulling = true; useKDTree = true; }
 	~Mesh();
 	const char* getName();
 	bool intersect(Ray ray, IntersectionData& info);
@@ -60,6 +97,7 @@ public:
 			pb.requiredProp("file");
 		pb.getBoolProp("faceted", &faceted);
 		pb.getBoolProp("backfaceCulling", &backfaceCulling);
+		pb.getBoolProp("useKDTree", &useKDTree);
 		initMesh();
 	}
 };

@@ -23,27 +23,38 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <SDL/SDL.h>
 #include "mesh.h"
 #include "constants.h"
 #include "color.h"
+#include "bbox.h"
 using std::max;
 using std::string;
 using std::vector;
+using std::swap;
 
 void Mesh::initMesh(void)
 {
-	// calculate a bounding sphere around the mesh:
-	Vector center(0, 0, 0);
-	double maxDist = 0;
-	for (size_t i = 0; i < vertices.size(); i++)
-		maxDist = max(maxDist, vertices[i].length());
-	boundingSphere = new Sphere(center, maxDist);
+	// calculate a bounding box around the mesh:
+	boundingBox.makeEmpty();
+	for (int i = 1; i < (int) vertices.size(); i++)
+		boundingBox.add(vertices[i]);
+	kdroot = NULL;
+	if (triangles.size() > 40 && useKDTree) {
+		kdroot = new KDTreeNode;
+		Uint32 ticks = SDL_GetTicks();
+		vector<int> allTriangles;
+		for (int i = 0; i < (int) triangles.size(); i++)
+			allTriangles.push_back(i);
+		build(kdroot, boundingBox, allTriangles, 0);
+		Uint32 timeElapsed = SDL_GetTicks() - ticks;
+		printf("KDtree built: %d triangles in %d ms\n", 
+			(int) allTriangles.size(), timeElapsed);
+	}
 }
 
 Mesh::~Mesh()
 {
-	if (boundingSphere)
-		delete boundingSphere;
 }
 
 const char* Mesh::getName()
@@ -52,6 +63,45 @@ const char* Mesh::getName()
 	sprintf(temp, "Mesh with %d vertices, %d triangles\n", (int) vertices.size(), (int) triangles.size());
 	return temp;
 }
+
+bool intersectTriangleFast(const Ray& ray, const Vector& A, const Vector& B, const Vector& C)
+{
+	Vector AB = B - A;
+	Vector AC = C - A;
+	Vector D = -ray.dir;
+	//              0               A
+	Vector H = ray.start - A;
+
+	/* 2. Solve the equation:
+	 *
+	 * A + lambda2 * AB + lambda3 * AC = ray.start + gamma * ray.dir
+	 *
+	 * which can be rearranged as:
+	 * lambda2 * AB + lambda3 * AC + gamma * D = ray.start - A
+	 *
+	 * Which is a linear system of three rows and three unknowns, which we solve using Carmer's rule
+	 */
+
+	// Find the determinant of the left part of the equation:
+	double Dcr = (AB ^ AC) * D;
+	
+	// are the ray and triangle parallel?
+	if (fabs(Dcr) < 1e-12) return false;
+	
+	double lambda2 = ( ( H ^ AC) * D ) / Dcr;
+	double lambda3 = ( (AB ^  H) * D ) / Dcr;
+	double gamma   = ( (AB ^ AC) * H ) / Dcr;
+
+	// is intersection behind us, or too far?
+	if (gamma < 0) return false;
+	
+	// is the intersection outside the triangle?
+	if (lambda2 < 0 || lambda2 > 1 || lambda3 < 0 || lambda3 > 1 || lambda2 + lambda3 > 1)
+		return false;
+	
+	return true;
+}
+
 
 bool Mesh::intersectTriangle(const Ray& ray, IntersectionData& data, Triangle& T)
 {
@@ -120,14 +170,43 @@ bool Mesh::intersectTriangle(const Ray& ray, IntersectionData& data, Triangle& T
 	return true;
 }
 
+bool Mesh::intersectKD(KDTreeNode* node, const BBox& bbox, const Ray& ray, IntersectionData& data)
+{
+	if (node->axis == AXIS_NONE) {
+		bool found = false;
+		for (size_t i = 0; i < node->triangles->size(); i++) {
+			int triIdx = (*node->triangles)[i];
+			if (intersectTriangle(ray, data, triangles[triIdx])) {
+				found = true;
+			}
+		}
+		if (found && bbox.inside(data.p)) return true;
+		return false;
+	} else {
+		int childOrder[2] = { 0, 1 };
+		if (ray.start[node->axis] > node->splitPos)
+			swap(childOrder[0], childOrder[1]);
+		BBox childBB[2];
+		bbox.split(node->axis, node->splitPos, childBB[0], childBB[1]);
+		for (int i = 0; i < 2; i++) if (childBB[childOrder[i]].testIntersect(ray)) {
+			KDTreeNode* child = &node->children[childOrder[i]];
+			if (intersectKD(child, childBB[childOrder[i]], ray, data))
+				return true;
+		}
+		return false;
+	}
+}
+
 bool Mesh::intersect(Ray ray, IntersectionData& data)
 {
 	bool found = false;
-	IntersectionData temp = data;
 	// if the ray doesn't intersect the bounding shpere, it is of no use
 	// to continue: it can't possibly intersect the mesh.
-	if (!boundingSphere->intersect(ray, temp)) return false;
+	if (!boundingBox.testIntersect(ray)) return false;
 	
+	if (kdroot) {
+		return intersectKD(kdroot, boundingBox, ray, data);
+	}
 	// naive algorithm - iterate and check for intersection all triangles:
 	for (size_t i = 0; i < triangles.size(); i++) {
 		if (intersectTriangle(ray, data, triangles[i]))
@@ -290,4 +369,35 @@ bool Mesh::loadFromOBJ(const char* filename)
 	
 	fclose(f);
 	return true;
+}
+
+
+void Mesh::build(KDTreeNode* node, const BBox& bbox, const vector<int>& tList, int depth)
+{
+	if (tList.size() < MAX_TRIANGLES_PER_LEAF || depth > MAX_TREE_DEPTH) {
+		node->initLeaf(tList);
+	} else {
+		Axis axis = (Axis) (depth % 3);
+		double axisL = bbox.vmin[axis];
+		double axisR = bbox.vmax[axis];
+		
+		double splitPos = (axisL + axisR) * 0.5;
+		BBox bbLeft, bbRight;
+		bbox.split(axis, splitPos, bbLeft, bbRight);
+		
+		vector<int> tLeft, tRight;
+		for (int i = 0; i < (int) tList.size(); i++) {
+			Triangle& T = triangles[tList[i]];
+			const Vector& A = vertices[T.v[0]];
+			const Vector& B = vertices[T.v[1]];
+			const Vector& C = vertices[T.v[2]];
+			if (bbLeft.intersectTriangle(A, B, C))
+				tLeft.push_back(tList[i]);
+			if (bbRight.intersectTriangle(A, B, C))
+				tRight.push_back(tList[i]);
+		}
+		node->initBinary(axis, splitPos);
+		build(&node->children[0], bbLeft, tLeft, depth + 1);
+		build(&node->children[1], bbRight, tRight, depth + 1);
+	}
 }

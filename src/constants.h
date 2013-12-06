@@ -27,6 +27,8 @@
 #define PI 3.141592653589793238
 #define INF 1e99
 #define MAX_TRACE_DEPTH_DEFAULT 5
+#define MAX_TRIANGLES_PER_LEAF 20
+#define MAX_TREE_DEPTH         64
 
 // large `float' number:
 #define LARGE_FLOAT 1e17f

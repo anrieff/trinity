@@ -48,7 +48,7 @@ enum Axis {
 };
 
 // from mesh.cpp
-bool intersectTriangleFast(const Ray& ray, const Vector& A, const Triangle& T, double& lambda2, double& lambda3, double& gamma);
+bool intersectTriangleFast(const Ray& ray, const Vector& A, const Vector& B, const Vector& C);
 
 /**
  * @Brief a class that represents an axis-aligned bounding box around some object
@@ -184,8 +184,7 @@ struct BBox {
 				rayEnd[j] = vmax[j];
 				if (signOf(ray.start * ABcrossAC - D) != signOf(rayEnd * ABcrossAC - D)) {
 					ray.dir = rayEnd - ray.start;
-					double gamma = 1.0000001, lambda2, lambda3;
-					if (intersectTriangleFast(ray, A, T, lambda2, lambda3, gamma)) return true;
+					if (intersectTriangleFast(ray, A, B, C)) return true;
 				}
 			}
 		}
