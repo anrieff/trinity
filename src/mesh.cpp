@@ -173,6 +173,7 @@ bool Mesh::intersectTriangle(const Ray& ray, IntersectionData& data, Triangle& T
 bool Mesh::intersectKD(KDTreeNode* node, const BBox& bbox, const Ray& ray, IntersectionData& data)
 {
 	if (node->axis == AXIS_NONE) {
+		// leaf node; try intersecting with the triangle list:
 		bool found = false;
 		for (size_t i = 0; i < node->triangles->size(); i++) {
 			int triIdx = (*node->triangles)[i];
@@ -180,18 +181,21 @@ bool Mesh::intersectKD(KDTreeNode* node, const BBox& bbox, const Ray& ray, Inter
 				found = true;
 			}
 		}
+		// the found intersection has to be inside "our" BBox, otherwise we can miss a triangle,
+		// as explained in the presentations:
 		if (found && bbox.inside(data.p)) return true;
 		return false;
 	} else {
+		// a in-node; intersect with the two children, starting with the closer one first:
 		int childOrder[2] = { 0, 1 };
 		if (ray.start[node->axis] > node->splitPos)
 			swap(childOrder[0], childOrder[1]);
 		BBox childBB[2];
 		bbox.split(node->axis, node->splitPos, childBB[0], childBB[1]);
-		for (int i = 0; i < 2; i++) if (childBB[childOrder[i]].testIntersect(ray)) {
+		for (int i = 0; i < 2; i++) if (childBB[childOrder[i]].testIntersect(ray)) { // if we intersect this bbox...
 			KDTreeNode* child = &node->children[childOrder[i]];
-			if (intersectKD(child, childBB[childOrder[i]], ray, data))
-				return true;
+			if (intersectKD(child, childBB[childOrder[i]], ray, data)) // ... check if we intersect the child recursively,
+				return true;                                           // and return yes if so - as quickly as possible
 		}
 		return false;
 	}
@@ -204,16 +208,17 @@ bool Mesh::intersect(Ray ray, IntersectionData& data)
 	// to continue: it can't possibly intersect the mesh.
 	if (!boundingBox.testIntersect(ray)) return false;
 	
+	// if we built a KDTree, use that:
 	if (kdroot) {
 		return intersectKD(kdroot, boundingBox, ray, data);
+	} else {
+		// naive algorithm - iterate and check for intersection all triangles:
+		for (size_t i = 0; i < triangles.size(); i++) {
+			if (intersectTriangle(ray, data, triangles[i]))
+				found = true;
+		}
+		return found;
 	}
-	// naive algorithm - iterate and check for intersection all triangles:
-	for (size_t i = 0; i < triangles.size(); i++) {
-		if (intersectTriangle(ray, data, triangles[i]))
-			found = true;
-	}
-	
-	return found;
 }
 
 // parse a string, convert to double. If string is empty, return 0
@@ -377,20 +382,26 @@ void Mesh::build(KDTreeNode* node, const BBox& bbox, const vector<int>& tList, i
 	if (tList.size() < MAX_TRIANGLES_PER_LEAF || depth > MAX_TREE_DEPTH) {
 		node->initLeaf(tList);
 	} else {
-		Axis axis = (Axis) (depth % 3);
-		double axisL = bbox.vmin[axis];
+		Axis axis = (Axis) (depth % 3); // alternate splitting planes: X, Y, Z, X, Y, Z, ...
+		double axisL = bbox.vmin[axis]; // the left and right extents of the bbox along the chosen axis
 		double axisR = bbox.vmax[axis];
 		
+		// naive split-position choice here: just use the middle of the current bbox.
+		// A smarter algo could be used here:
 		double splitPos = (axisL + axisR) * 0.5;
 		BBox bbLeft, bbRight;
 		bbox.split(axis, splitPos, bbLeft, bbRight);
 		
+		// Split the triangle list into tLeft, tRight, depending on which BBox the triangles
+		// intersect with.
 		vector<int> tLeft, tRight;
 		for (int i = 0; i < (int) tList.size(); i++) {
 			Triangle& T = triangles[tList[i]];
 			const Vector& A = vertices[T.v[0]];
 			const Vector& B = vertices[T.v[1]];
 			const Vector& C = vertices[T.v[2]];
+			// usually, a triangle will go either in the left or the right list. In some
+			// cases, it may go in both (which is bad, but we hope this would be rare):
 			if (bbLeft.intersectTriangle(A, B, C))
 				tLeft.push_back(tList[i]);
 			if (bbRight.intersectTriangle(A, B, C))

@@ -25,21 +25,28 @@
 #include "geometry.h"
 #include "bbox.h"
 
+// A node of the K-d tree. It is either a in-node (if axis is AXIS_X, AXIS_Y, AXIS_Z),
+// in which case the 'splitPos' holds the split position, and data.children is an array
+// of two children.
+// If axis is AXIS_NONE, then it is a leaf node, and data.triangles holds a list of
+// indices to triangles.
 struct KDTreeNode {
 	Axis axis;
 	double splitPos;
 	union {
 		std::vector<int>* triangles; // 1 pointer to list of triangle indices
-		KDTreeNode* children;    // 1 pointer to TWO children
+		KDTreeNode* children;        // 1 pointer to TWO children (children[0] and children[1])
 	};
 	
 	KDTreeNode() {}
+	// initialize this node as a leaf node:
 	void initLeaf(const std::vector<int>& triangleList)
 	{
 		axis = AXIS_NONE;
 		splitPos = 0;
 		triangles = new std::vector<int>(triangleList);
 	}
+	// initialize this node as a in-node (a binary node with two children)
 	void initBinary(Axis axis, double splitPos)
 	{
 		this->axis = axis;
@@ -73,9 +80,8 @@ class Mesh: public Geometry {
 	BBox boundingBox; //!< a bounding box, which optimizes our whole
 	
 	bool loadFromOBJ(const char* filename); //!< load a mesh from an .OBJ file.
-	bool useKDTree;
-	KDTreeNode* kdroot;
-	
+	bool useKDTree; //!< whether to use a KD-tree to speed-up intersections
+	KDTreeNode* kdroot; //!< a pointer to the root of the KDTree. Can be NULL if no tree is built.
 	
 	void build(KDTreeNode* node, const BBox& bbox, const std::vector<int>& triangles, int depth);
 	bool intersectKD(KDTreeNode* node, const BBox& bbox, const Ray& ray, IntersectionData& data);
