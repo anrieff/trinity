@@ -101,3 +101,11 @@ Matrix inverseMatrix(const Matrix& m)
 	return result;
 }
 
+Matrix transpose(const Matrix& a)
+{
+	Matrix res;
+	for (int i = 0; i < 3; i++)
+		for (int j = 0; j < 3; j++)
+			res.m[i][j] = a.m[j][i];
+	return res;
+}

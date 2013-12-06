@@ -29,7 +29,7 @@ class Heightfield: public Geometry {
 	BBox bbox;
 	int W, H;
 	float getHeight(int x, int y) const;
-	Vector getNormal(int x, int y) const;
+	Vector getNormal(float x, float y) const;
 public:
 	Heightfield() { heights = NULL;}
 	~Heightfield() { if (heights) delete[] heights; }

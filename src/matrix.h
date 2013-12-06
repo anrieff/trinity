@@ -47,6 +47,7 @@ inline void operator *= (Vector& v, const Matrix& a) { v = v*a; }
 
 Matrix operator * (const Matrix& a, const Matrix& b); //!< matrix multiplication; result = a*b
 Matrix inverseMatrix(const Matrix& a); //!< finds the inverse of a matrix (assuming it exists)
+Matrix transpose(const Matrix& a); //!< finds the transposed matrix
 double determinant(const Matrix& a); //!< finds the determinant of a matrix
 
 Matrix rotationAroundX(double angle); //!< returns a rotation matrix around the X axis; the angle is in radians

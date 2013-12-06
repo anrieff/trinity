@@ -26,7 +26,7 @@ float Heightfield::getHeight(int x, int y) const
 	return heights[y * W + x];
 }
 
-Vector Heightfield::getNormal(int x, int y) const
+Vector Heightfield::getNormal(float x, float y) const
 {
 	// we have precalculated the normals at each integer position.
 	// Here, we do bilinear filtering on the four nearest integral positions:

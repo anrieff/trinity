@@ -33,6 +33,7 @@ public:
 	void reset() {
 		transform = Matrix(1);
 		inverseTransform = inverseMatrix(transform);
+		transposedInverse = Matrix(1);
 		offset.makeZero();
 	}
 
@@ -42,7 +43,8 @@ public:
 		scaling.m[2][2] = Z;
 
 		transform = transform * scaling;
-		inverseTransform = inverseMatrix(scaling) * inverseTransform;
+		inverseTransform = inverseMatrix(transform);
+		transposedInverse = transpose(inverseTransform);
 	}
 
 	void rotate(double yaw, double pitch, double roll) {
@@ -51,6 +53,7 @@ public:
 			rotationAroundY(toRadians(yaw)) *
 			rotationAroundZ(toRadians(roll));
 		inverseTransform = inverseMatrix(transform);
+		transposedInverse = transpose(inverseTransform);
 	}
 
 	void translate(const Vector& V) {
@@ -75,6 +78,10 @@ public:
 		return dir * transform;
 	}
 
+	Vector normal(const Vector& dir) const {
+		return dir * transposedInverse;
+	}
+
 	Vector undoDirection(const Vector& dir) const {
 		return dir * inverseTransform;
 	}
@@ -82,6 +89,7 @@ public:
 private:
 	Matrix transform;
 	Matrix inverseTransform;
+	Matrix transposedInverse;
 	Vector offset;
 };
 
