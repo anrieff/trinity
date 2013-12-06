@@ -80,8 +80,11 @@ bool Sphere::intersect(Ray ray, IntersectionData& info)
 	info.p = ray.start + ray.dir * sol;
 	info.normal = info.p - center; // generate the normal by getting the direction from the center to the ip
 	info.normal.normalize();
-	info.u = (PI + atan2(info.p.z - center.z, info.p.x - center.x))/(2*PI);
+	double angle = atan2(info.p.z - center.z, info.p.x - center.x);
+	info.u = (PI + angle)/(2*PI);
 	info.v = 1.0 - (PI/2 + asin((info.p.y - center.y)/R)) / PI;
+	info.dNdx = Vector(cos(angle + PI/2), 0, sin(angle + PI/2));
+	info.dNdy = info.dNdx ^ info.normal;
 	info.g = this;
 	return true;
 }
@@ -106,6 +109,8 @@ inline bool Cube::intersectCubeSide(const Ray& ray, const Vector& center, Inters
 		data.p = ray.start + ray.dir * mult;
 		data.dist = mult;
 		data.normal = Vector(0, side, 0);
+		data.dNdx = Vector(1, 0, 0);
+		data.dNdy = Vector(0, 0, side);
 		data.u = data.p.x - center.x;
 		data.v = data.p.z - center.z;
 		found = true;	

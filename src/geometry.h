@@ -193,7 +193,7 @@ public:
 	Transform transform;
 	Texture* bump;
 	
-	Node() {}
+	Node() { bump = NULL; }
 	Node(Geometry* g, Shader* s) { geom = g; shader = s; bump = NULL; }
 	
 	// from Intersectable:
