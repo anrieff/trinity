@@ -83,8 +83,8 @@ class Mesh: public Geometry {
 	bool useKDTree; //!< whether to use a KD-tree to speed-up intersections
 	KDTreeNode* kdroot; //!< a pointer to the root of the KDTree. Can be NULL if no tree is built.
 	
-	void build(KDTreeNode* node, const BBox& bbox, const std::vector<int>& triangles, int depth);
-	bool intersectKD(KDTreeNode* node, const BBox& bbox, const Ray& ray, IntersectionData& data);
+	void build(KDTreeNode& node, const BBox& bbox, const std::vector<int>& triangles, int depth);
+	bool intersectKD(KDTreeNode& node, const BBox& bbox, const Ray& ray, IntersectionData& data);
 public:
 	Mesh() { faceted = false; backfaceCulling = true; useKDTree = true; }
 	~Mesh();

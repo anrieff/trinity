@@ -46,7 +46,7 @@ void Mesh::initMesh(void)
 		vector<int> allTriangles;
 		for (int i = 0; i < (int) triangles.size(); i++)
 			allTriangles.push_back(i);
-		build(kdroot, boundingBox, allTriangles, 0);
+		build(*kdroot, boundingBox, allTriangles, 0);
 		Uint32 timeElapsed = SDL_GetTicks() - ticks;
 		printf("KDtree built: %d triangles in %d ms\n", 
 			(int) allTriangles.size(), timeElapsed);
@@ -171,13 +171,13 @@ bool Mesh::intersectTriangle(const Ray& ray, IntersectionData& data, Triangle& T
 	return true;
 }
 
-bool Mesh::intersectKD(KDTreeNode* node, const BBox& bbox, const Ray& ray, IntersectionData& data)
+bool Mesh::intersectKD(KDTreeNode& node, const BBox& bbox, const Ray& ray, IntersectionData& data)
 {
-	if (node->axis == AXIS_NONE) {
+	if (node.axis == AXIS_NONE) {
 		// leaf node; try intersecting with the triangle list:
 		bool found = false;
-		for (size_t i = 0; i < node->triangles->size(); i++) {
-			int triIdx = (*node->triangles)[i];
+		for (size_t i = 0; i < node.triangles->size(); i++) {
+			int triIdx = (*node.triangles)[i];
 			if (intersectTriangle(ray, data, triangles[triIdx])) {
 				found = true;
 			}
@@ -189,12 +189,12 @@ bool Mesh::intersectKD(KDTreeNode* node, const BBox& bbox, const Ray& ray, Inter
 	} else {
 		// a in-node; intersect with the two children, starting with the closer one first:
 		int childOrder[2] = { 0, 1 };
-		if (ray.start[node->axis] > node->splitPos)
+		if (ray.start[node.axis] > node.splitPos)
 			swap(childOrder[0], childOrder[1]);
 		BBox childBB[2];
-		bbox.split(node->axis, node->splitPos, childBB[0], childBB[1]);
+		bbox.split(node.axis, node.splitPos, childBB[0], childBB[1]);
 		for (int i = 0; i < 2; i++) if (childBB[childOrder[i]].testIntersect(ray)) { // if we intersect this bbox...
-			KDTreeNode* child = &node->children[childOrder[i]];
+			KDTreeNode& child = node.children[childOrder[i]];
 			if (intersectKD(child, childBB[childOrder[i]], ray, data)) // ... check if we intersect the child recursively,
 				return true;                                           // and return yes if so - as quickly as possible
 		}
@@ -211,7 +211,7 @@ bool Mesh::intersect(Ray ray, IntersectionData& data)
 	
 	// if we built a KDTree, use that:
 	if (kdroot) {
-		return intersectKD(kdroot, boundingBox, ray, data);
+		return intersectKD(*kdroot, boundingBox, ray, data);
 	} else {
 		// naive algorithm - iterate and check for intersection all triangles:
 		for (size_t i = 0; i < triangles.size(); i++) {
@@ -378,10 +378,10 @@ bool Mesh::loadFromOBJ(const char* filename)
 }
 
 
-void Mesh::build(KDTreeNode* node, const BBox& bbox, const vector<int>& tList, int depth)
+void Mesh::build(KDTreeNode& node, const BBox& bbox, const vector<int>& tList, int depth)
 {
 	if (tList.size() < MAX_TRIANGLES_PER_LEAF || depth > MAX_TREE_DEPTH) {
-		node->initLeaf(tList);
+		node.initLeaf(tList);
 	} else {
 		Axis axis = (Axis) (depth % 3); // alternate splitting planes: X, Y, Z, X, Y, Z, ...
 		double axisL = bbox.vmin[axis]; // the left and right extents of the bbox along the chosen axis
@@ -408,8 +408,8 @@ void Mesh::build(KDTreeNode* node, const BBox& bbox, const vector<int>& tList, i
 			if (bbRight.intersectTriangle(A, B, C))
 				tRight.push_back(tList[i]);
 		}
-		node->initBinary(axis, splitPos);
-		build(&node->children[0], bbLeft, tLeft, depth + 1);
-		build(&node->children[1], bbRight, tRight, depth + 1);
+		node.initBinary(axis, splitPos);
+		build(node.children[0], bbLeft, tLeft, depth + 1);
+		build(node.children[1], bbRight, tRight, depth + 1);
 	}
 }
