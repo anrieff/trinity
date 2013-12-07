@@ -372,7 +372,19 @@ bool Mesh::loadFromOBJ(const char* filename)
 		T.dNdy = AB * py + AC * qy;
 		T.dNdy.normalize();
 	}
-	
+	// create the normals[] array - if needed:
+	if (!hasNormals && autoSmooth) {
+		hasNormals = true;
+		normals.resize(vertices.size(), Vector(0, 0, 0)); // extend the normals[] array, and fill with zeros
+		for (int i = 0; i < (int) triangles.size(); i++)
+			for (int j = 0; j < 3; j++) {
+				triangles[i].n[j] = triangles[i].v[j];
+				normals[triangles[i].n[j]] += triangles[i].gnormal;
+			}
+		for (int i = 1; i < (int) normals.size(); i++)
+			if (normals[i].lengthSqr() > 1e-9) normals[i].normalize();
+	}
+
 	fclose(f);
 	return true;
 }

@@ -77,6 +77,7 @@ class Mesh: public Geometry {
 	bool faceted; //!< whether the normals interpolation is disabled or not
 	bool backfaceCulling; //!< whether the backfaceCulling optimization is enabled (default: yes)
 	bool hasNormals; //!< whether the .obj file contained normals. If not, no normal smoothing can be used.
+	bool autoSmooth; //!< create smooth normals if the OBJ file lacks them
 	BBox boundingBox; //!< a bounding box, which optimizes our whole
 	
 	bool loadFromOBJ(const char* filename); //!< load a mesh from an .OBJ file.
@@ -86,7 +87,7 @@ class Mesh: public Geometry {
 	void build(KDTreeNode& node, const BBox& bbox, const std::vector<int>& triangles, int depth);
 	bool intersectKD(KDTreeNode& node, const BBox& bbox, const Ray& ray, IntersectionData& data);
 public:
-	Mesh() { faceted = false; backfaceCulling = true; useKDTree = true; }
+	Mesh() { faceted = false; backfaceCulling = true; useKDTree = true; autoSmooth = true; }
 	~Mesh();
 	const char* getName();
 	bool intersect(Ray ray, IntersectionData& info);
@@ -104,6 +105,7 @@ public:
 		pb.getBoolProp("faceted", &faceted);
 		pb.getBoolProp("backfaceCulling", &backfaceCulling);
 		pb.getBoolProp("useKDTree", &useKDTree);
+		pb.getBoolProp("autoSmooth", &autoSmooth);
 		initMesh();
 	}
 };
