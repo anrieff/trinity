@@ -330,9 +330,9 @@ bool Mesh::loadFromOBJ(const char* filename)
 		
 		// f line - a face definition
 		if (tokens[0] == "f") {
-			int n = tokens.size() - 3;
+			int numTriangles = tokens.size() - 3;
 			
-			for (int i = 0; i < n; i++) {
+			for (int i = 0; i < numTriangles; i++) {
 				Triangle T(tokens[1], tokens[2 + i], tokens[3 + i]);
 				triangles.push_back(T);
 			}
