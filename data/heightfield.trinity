@@ -3,8 +3,8 @@
 //
 
 GlobalSettings {
-	frameWidth      800
-	frameHeight     600
+	frameWidth      1024
+	frameHeight     768
 	ambientLight    (0.25, 0.25, 0.25)
 	lightPos	(6000, 2000, -30)
 	lightPower  50000000
@@ -118,6 +118,7 @@ Lambert island_shader {
 Heightfield island {
 	file "texture/heightfield.bmp"
 	blur 2.5
+	useOptimization true
 }
 
 Node island {

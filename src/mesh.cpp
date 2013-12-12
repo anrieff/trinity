@@ -65,7 +65,7 @@ const char* Mesh::getName()
 	return temp;
 }
 
-bool intersectTriangleFast(const Ray& ray, const Vector& A, const Vector& B, const Vector& C)
+bool intersectTriangleFast(const Ray& ray, const Vector& A, const Vector& B, const Vector& C, double& dist)
 {
 	Vector AB = B - A;
 	Vector AC = C - A;
@@ -94,11 +94,14 @@ bool intersectTriangleFast(const Ray& ray, const Vector& A, const Vector& B, con
 	double gamma   = ( (AB ^ AC) * H ) / Dcr;
 
 	// is intersection behind us, or too far?
-	if (gamma < 0) return false;
-	
+	if (gamma < 0 || gamma > dist) return false;
+
 	// is the intersection outside the triangle?
 	if (lambda2 < 0 || lambda2 > 1 || lambda3 < 0 || lambda3 > 1 || lambda2 + lambda3 > 1)
 		return false;
+
+	dist = gamma;
+	
 	
 	return true;
 }

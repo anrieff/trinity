@@ -25,14 +25,28 @@
 
 class Heightfield: public Geometry {
 	float* heights;
+	float* maxH;
 	Vector* normals;
 	BBox bbox;
+	bool useOptimization;
 	int W, H;
 	float getHeight(int x, int y) const;
 	Vector getNormal(float x, float y) const;
+	// this sturcture will hold the height of the highest peak around a single position,
+	// within a radius of 1 texels, 2 texels, 4 texels, ... 2^k texels.
+	// h[k] holds the highest peak within (1<<k) texels
+	struct HighStruct {
+		float h[16];
+	};
+	HighStruct* hsmap; //!< the actual storage for the accelerated structure
+	int maxK;          //!< max level stored in the hsmap
+	
+	void buildStruct(void); //!< build the accelerated structure
+	float getHighest(int x, int y, int k) const; //!< Gets the highest nearby peak around position (x, y) on the heightmap with distance no more than 2^k
+
 public:
-	Heightfield() { heights = NULL;}
-	~Heightfield() { if (heights) delete[] heights; }
+	Heightfield() { heights = NULL; maxH = NULL; normals = NULL; useOptimization = false; }
+	~Heightfield();
 	bool intersect(Ray ray, IntersectionData& info);
 	bool isInside(const Vector& p ) const { return false; }
 	void fillProperties(ParsedBlock& pb);

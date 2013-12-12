@@ -259,7 +259,7 @@ void handleMouse(SDL_MouseButtonEvent *mev)
 	printf("Raytracing completed!\n");
 }
 
-const char* defaultScene = "data/testmesh.trinity";
+const char* defaultScene = "data/heightfield.trinity";
 
 static bool parseCmdLine(int argc, char** argv)
 {
