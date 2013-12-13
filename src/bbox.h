@@ -184,7 +184,7 @@ struct BBox {
 				rayEnd[j] = vmax[j];
 				if (signOf(ray.start * ABcrossAC - D) != signOf(rayEnd * ABcrossAC - D)) {
 					ray.dir = rayEnd - ray.start;
-					double dist;
+					double dist = INF;
 					if (intersectTriangleFast(ray, A, B, C, dist)) return true;
 				}
 			}
