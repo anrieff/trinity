@@ -19,6 +19,7 @@
  ***************************************************************************/
 
 #include <string.h>
+#include "lights.h"
 #include "shading.h"
 #include "random_generator.h"
 
@@ -62,15 +63,25 @@ Color Lambert::shade(Ray ray, const IntersectionData& data)
 	
 	Color lightContrib = scene.settings.ambientLight;
 	
-	if (testVisibility(data.p + N * 1e-6, scene.settings.lightPos)) {
-		Vector lightDir = scene.settings.lightPos - data.p;
-		lightDir.normalize();
-		
-		// get the Lambertian cosine of the angle between the geometry's normal and
-		// the direction to the light. This will scale the lighting:
-		double cosTheta = dot(lightDir, N);
-		if (cosTheta > 0)
-			lightContrib += scene.settings.lightColor * scene.settings.lightPower / (data.p - scene.settings.lightPos).lengthSqr() * cosTheta;
+	for (int i = 0; i < (int) scene.lights.size(); i++) {
+		int numSamples = scene.lights[i]->getNumSamples();
+		Color avgColor(0, 0, 0);
+		for (int j = 0; j < numSamples; j++) {
+			Vector lightPos;
+			Color lightColor;
+			scene.lights[i]->getNthSample(j, data.p, lightPos, lightColor);
+			if (lightColor.intensity() != 0 && testVisibility(data.p + N * 1e-6, lightPos)) {
+				Vector lightDir = lightPos - data.p;
+				lightDir.normalize();
+				
+				// get the Lambertian cosine of the angle between the geometry's normal and
+				// the direction to the light. This will scale the lighting:
+				double cosTheta = dot(lightDir, N);
+				if (cosTheta > 0)
+					avgColor += lightColor / (data.p - lightPos).lengthSqr() * cosTheta;
+			}
+		}
+		lightContrib += avgColor / numSamples;
 	}
 	return diffuseColor * lightContrib;
 }
@@ -86,26 +97,39 @@ Color Phong::shade(Ray ray, const IntersectionData& data)
 	Color lightContrib = scene.settings.ambientLight;
 	Color specular(0, 0, 0);
 	
-	if (testVisibility(data.p + N * 1e-6, scene.settings.lightPos)) {
-		Vector lightDir = scene.settings.lightPos - data.p;
-		lightDir.normalize();
-		
-		// get the Lambertian cosine of the angle between the geometry's normal and
-		// the direction to the light. This will scale the lighting:
-		double cosTheta = dot(lightDir, N);
+	for (int i = 0; i < (int) scene.lights.size(); i++) {
+		int numSamples = scene.lights[i]->getNumSamples();
+		Color avgColor(0, 0, 0);
+		Color avgSpecular(0, 0, 0);
+		for (int j = 0; j < numSamples; j++) {
+			Vector lightPos;
+			Color lightColor;
+			scene.lights[i]->getNthSample(j, data.p, lightPos, lightColor);
+			if (lightColor.intensity() != 0 && testVisibility(data.p + N * 1e-6, lightPos)) {
+				Vector lightDir = lightPos - data.p;
+				lightDir.normalize();
+				
+				// get the Lambertian cosine of the angle between the geometry's normal and
+				// the direction to the light. This will scale the lighting:
+				double cosTheta = dot(lightDir, N);
 
-		// baseLight is the light that "arrives" to the intersection point
-		Color baseLight = scene.settings.lightColor * scene.settings.lightPower / (data.p - scene.settings.lightPos).lengthSqr();
-		if (cosTheta > 0)
-			lightContrib += baseLight * cosTheta; // lambertian contribution
-		
-		// R = vector after the ray from the light towards the intersection point
-		// is reflected at the intersection:
-		Vector R = reflect(-lightDir, N);
-		
-		double cosGamma = dot(R, -ray.dir);
-		if (cosGamma > 0)
-			specular += baseLight * pow(cosGamma, exponent) * strength; // specular contribution
+				// baseLight is the light that "arrives" to the intersection point
+				Color baseLight = lightColor / (data.p - lightPos).lengthSqr();
+				if (cosTheta > 0)
+					avgColor += baseLight * cosTheta; // lambertian contribution
+				
+				// R = vector after the ray from the light towards the intersection point
+				// is reflected at the intersection:
+				Vector R = reflect(-lightDir, N);
+				
+				double cosGamma = dot(R, -ray.dir);
+				if (cosGamma > 0)
+					avgSpecular += baseLight * pow(cosGamma, exponent) * strength; // specular contribution
+			
+			}
+		}
+		lightContrib += avgColor / numSamples;
+		specular += avgSpecular / numSamples;
 	}
 	// specular is not multiplied by diffuseColor, since we want the specular hilights to be
 	// independent on the material color. I.e., a blue ball has white hilights

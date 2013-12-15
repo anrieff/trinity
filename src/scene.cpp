@@ -41,6 +41,7 @@
 #include "mesh.h"
 #include "random_generator.h"
 #include "heightfield.h"
+#include "lights.h"
 #include <assert.h>
 using std::vector;
 using std::string;
@@ -525,6 +526,7 @@ bool DefaultSceneParser::parse(const char* filename, Scene* ss)
 				case ELEM_NODE: s->nodes.push_back((Node*)curObj); break;
 				case ELEM_ENVIRONMENT: s->environment = (Environment*) curObj; break;
 				case ELEM_CAMERA: s->camera = (Camera*)curObj; break;
+				case ELEM_LIGHT: s->lights.push_back((Light*) curObj); break;
 				default: break;
 			}
 		} else {
@@ -770,6 +772,10 @@ Scene::~Scene()
 		if (shaders[i]) delete shaders[i];
 	}
 	shaders.clear();
+	for (int i = 0; i < (int) lights.size(); i++) {
+		if (lights[i]) delete lights[i];
+	}
+	lights.clear();
 	if (environment) delete environment;
 	environment = NULL;
 	if (camera) delete camera;
@@ -790,6 +796,7 @@ void Scene::beginRender()
 	for (int i = 0; i < (int) shaders.size(); i++) shaders[i]->beginRender();
 	for (int i = 0; i < (int) superNodes.size(); i++) superNodes[i]->beginRender();
 	for (int i = 0; i < (int) nodes.size(); i++) nodes[i]->beginRender();
+	for (int i = 0; i < (int) lights.size(); i++) lights[i]->beginRender();
 	camera->beginRender();
 	settings.beginRender();
 	if (environment) environment->beginRender();
@@ -802,6 +809,7 @@ void Scene::beginFrame()
 	for (int i = 0; i < (int) shaders.size(); i++) shaders[i]->beginFrame();
 	for (int i = 0; i < (int) superNodes.size(); i++) superNodes[i]->beginFrame();
 	for (int i = 0; i < (int) nodes.size(); i++) nodes[i]->beginFrame();
+	for (int i = 0; i < (int) lights.size(); i++) lights[i]->beginFrame();
 	camera->beginFrame();
 	settings.beginFrame();
 	if (environment) environment->beginFrame();
@@ -823,9 +831,6 @@ void GlobalSettings::fillProperties(ParsedBlock& pb)
 	pb.getIntProp("frameWidth", &frameWidth);
 	pb.getIntProp("frameHeight", &frameHeight);
 	pb.getColorProp("ambientLight", &ambientLight);
-	pb.getVectorProp("lightPos", &lightPos);
-	pb.getColorProp("lightColor", &lightColor);
-	pb.getFloatProp("lightPower", &lightPower);
 	pb.getIntProp("maxTraceDepth", &maxTraceDepth);
 	pb.getBoolProp("dbg", &dbg);
 	pb.getBoolProp("wantPrepass", &wantPrepass);
@@ -857,6 +862,8 @@ SceneElement* DefaultSceneParser::newSceneElement(const char* className)
 	if (!strcmp(className, "BumpTexture")) return new BumpTexture;
 	if (!strcmp(className, "Bumps")) return new Bumps;
 	if (!strcmp(className, "Heightfield")) return new Heightfield;
+	if (!strcmp(className, "PointLight")) return new PointLight;
+	if (!strcmp(className, "RectLight")) return new RectLight;
 	return NULL;
 }
 

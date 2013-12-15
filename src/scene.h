@@ -46,6 +46,7 @@ class Texture;
 class Environment;
 class Camera;
 class Bitmap;
+class Light;
 struct Transform;
 
 class ParsedBlock;
@@ -242,9 +243,6 @@ struct GlobalSettings: public SceneElement {
 
 	// Lighting:
 	Color ambientLight;          //!< ambient color
-	Color lightColor;            //!< point light color
-	float lightPower;            //!< light power
-	Vector lightPos;             //!< light position
 	
 	// AA-related:
 	bool wantAA, wantPrepass;    //!< Antialiasing flag and prepass (a quick low-resolution rendering) flag
@@ -265,6 +263,7 @@ struct Scene {
 	std::vector<Node*> nodes;
 	std::vector<Node*> superNodes; // also Nodes, but without a shader attached; don't represent an scene object directly
 	std::vector<Texture*> textures;
+	std::vector<Light*> lights;
 	Environment* environment;
 	Camera* camera;
 	GlobalSettings settings;

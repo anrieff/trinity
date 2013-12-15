@@ -22,6 +22,7 @@
 #include "matrix.h"
 #include "util.h"
 #include "sdl.h"
+#include "random_generator.h"
 
 void Camera::beginFrame(void)
 {
@@ -50,6 +51,9 @@ void Camera::beginFrame(void)
 	upLeft *= rotation;
 	upRight *= rotation;
 	downLeft *= rotation;
+	rightDir = Vector(1, 0, 0) * rotation;
+	upDir    = Vector(0, 1, 0) * rotation;
+	frontDir = Vector(0, 0, 1) * rotation;
 	
 	upLeft += pos;
 	upRight += pos;
@@ -69,5 +73,22 @@ Ray Camera::getScreenRay(double x, double y)
 	
 	result.dir.normalize();
 	
+	if (!dof) return result;
+	
+	double cosTheta = dot(result.dir, frontDir);
+	double M = focalPlaneDist / cosTheta;
+	
+	Vector T = result.start + result.dir * M;
+	
+	Random& R = getRandomGen();
+	double dx, dy;
+	R.unitDiscSample(dx, dy);
+	
+	dx *= discMultiplier;
+	dy *= discMultiplier;
+	
+	result.start = this->pos + dx * rightDir + dy * upDir;
+	result.dir = (T - result.start);
+	result.dir.normalize();
 	return result;
 }

@@ -11,10 +11,22 @@
 GlobalSettings {
 	frameWidth          640
 	frameHeight         480
-	ambientLight (0.5, 0.5, 0.5)
-	lightPos     (-90, 1200, -750)
-	lightColor   (1, 1, 1)
-	lightPower   1200000
+	ambientLight (0.08, 0.08, 0.08)
+}
+/*
+RectLight l1 {
+	translate   (-750, 1200, -750)
+	col   (1, 1, 1)
+	power 1200000
+	scale (300, 300, 300)
+	xSubd 4
+	ySubd 4
+}
+*/
+PointLight l1 {
+	pos   (-750, 1200, -750)
+	col   (1, 1, 1)
+	power 1200000
 }
 
 // 2. A camera
@@ -25,6 +37,10 @@ Camera camera {
 	pitch   -10
 	roll     0
 	fov     75
+	focalPlaneDist 300
+	fNumber 2.0
+	dof     true
+	numSamples 100
 }
 
 // 3. The floor node:
@@ -78,17 +94,17 @@ Layered glass {
 // 4. The mesh:
 Mesh mesh {
 //	file        "geom/3pyramid.obj"
-//	file        "geom/teapot_lowres.obj"
+	file        "geom/teapot_lowres.obj"
 //	file        "geom/heart.obj"
-	file		"geom/newwine.obj"
+//	file		"geom/newwine.obj"
 //	file	 	"geom/truncated_cube.obj"
-	backfaceCulling false
+//	backfaceCulling false
 }
 
 Checker checker {
 	color1 (0.70, 0.70, 0.70)
 	color2 (0.15, 0.15, 0.15)
-	size 0.5
+	size 0.1
 }
 
 Lambert checker_shader {
@@ -119,8 +135,15 @@ Layered glass {
 	layer reflection (1, 1, 1) fresnel
 }
 
+Checker checker {
+	color1 (0.2, 0.2, 0.2)
+	color2 (0.8, 0.8, 0.8)
+	size 0.1
+}
+
 Lambert lambert {
 	color (0.7, 0.7, 0.7)
+	texture checker
 }
 
 
@@ -132,9 +155,9 @@ BumpTexture bumptex {
 
 Node soccer_ball {
 	geometry     mesh
-	shader       glass
-	scale        (150, 150, 150)
-	rotate       (90, 0, 0)
+	shader       lambert
+	scale        (80, 80, 80)
+	rotate       (135, 0, 0)
 	translate    (0, 0, 0)
 //	bump bumptex
 }

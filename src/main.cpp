@@ -115,7 +115,16 @@ inline bool tooDifferent(const Color& a, const Color& b)
 // trace a ray through pixel coords (x, y).
 Color renderSample(double x, double y)
 {
-	return raytrace(scene.camera->getScreenRay(x, y));
+	if (scene.camera->dof) {
+		Color average(0, 0, 0);
+		Random& R = getRandomGen();
+		for (int i = 0; i < scene.camera->numSamples; i++) {
+			average += raytrace(scene.camera->getScreenRay(x + R.randdouble(), y + R.randdouble()));
+		}
+		return average / scene.camera->numSamples;
+	} else {
+		return raytrace(scene.camera->getScreenRay(x, y));
+	}
 }
 
 // gets the color for a single pixel, without antialiasing
@@ -180,7 +189,7 @@ void renderScene(void)
 			return;
 	}
 
-	if (scene.settings.wantAA) {
+	if (scene.settings.wantAA && !scene.camera->dof) {
 		// second pass: find pixels, that need anti-aliasing, by analyzing their neighbours
 		for (int y = 0; y < H; y++) {
 			for (int x = 0; x < W; x++) {
@@ -225,7 +234,7 @@ void renderScene(void)
 		 * four rays, adding with what we currently have in the pixel, and average
 		 * after that.
 		 */
-		if (scene.settings.wantAA) {
+		if (scene.settings.wantAA && !scene.camera->dof) {
 			for (size_t i = 0; i < buckets.size(); i++) {
 				const Rect& r = buckets[i];
 				if (!markRegion(r))
@@ -259,7 +268,7 @@ void handleMouse(SDL_MouseButtonEvent *mev)
 	printf("Raytracing completed!\n");
 }
 
-const char* defaultScene = "data/heightfield.trinity";
+const char* defaultScene = "data/testmesh.trinity";
 
 static bool parseCmdLine(int argc, char** argv)
 {

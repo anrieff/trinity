@@ -27,6 +27,7 @@ class Camera: public SceneElement {
 	// these internal vectors describe three of the ends of the imaginary
 	// ray shooting screen
 	Vector upLeft, upRight, downLeft;
+	Vector frontDir, rightDir, upDir;
 public:
 	Vector pos; //!< position of the camera in 3D.
 	double yaw; //!< Yaw angle in degrees (rot. around the Y axis, meaningful values: [0..360])
@@ -34,6 +35,13 @@ public:
 	double roll; //!< Roll angle in degrees (rot. around the Z axis, meaningful values: [-180..180])
 	double fov; //!< The Field of view in degrees (meaningful values: [3..160])
 	double aspect; //!< The aspect ratio of the camera frame. Should usually be frameWidth/frameHeight,
+	double focalPlaneDist;
+	double fNumber;
+	bool dof; // on or off
+	int numSamples;
+	double discMultiplier;
+	
+	Camera() { dof = false; fNumber = 1.0; focalPlaneDist = 1; numSamples = 25; }
 	
 	// from SceneElement:
 	void beginFrame(); //!< must be called before each frame. Computes the corner variables, needed for getScreenRay()
@@ -48,6 +56,11 @@ public:
 		pb.getDoubleProp("yaw", &yaw);
 		pb.getDoubleProp("pitch", &pitch, -90, 90);
 		pb.getDoubleProp("roll", &roll);
+		pb.getDoubleProp("focalPlaneDist", &focalPlaneDist);
+		pb.getDoubleProp("fNumber", &fNumber);
+		pb.getBoolProp("dof", &dof);
+		pb.getIntProp("numSamples", &numSamples);
+		discMultiplier = 10.0 / fNumber;
 	}
 	
 	/// generates a screen ray through a pixel (x, y - screen coordinates, not necessarily integer).
