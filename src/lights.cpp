@@ -10,7 +10,7 @@ int PointLight::getNumSamples()
 void PointLight::getNthSample(int sampleIdx, const Vector& shadePos, Vector& samplePos, Color& color)
 {
 	samplePos = pos;
-	color = this->col * this->power;
+	color = this->color * this->power;
 }
 
 
@@ -35,5 +35,5 @@ void RectLight::getNthSample(int sampleIdx, const Vector& shadePos, Vector& samp
 	
 	Vector sampleCanonical(sx - 0.5, 0, sy - 0.5);
 	samplePos = T.point(sampleCanonical);
-	color = col * power;
+	color = this->color * this->power;
 }

@@ -16,7 +16,7 @@ GlobalSettings {
 
 PointLight l1 {
 	pos (-90, 1200, -750)
-	col (1, 1, 1)
+	color (1, 1, 1)
 	power 1200000
 }
 // 2. A camera
@@ -27,9 +27,6 @@ Camera camera {
 	pitch   -5
 	roll     0
 	fov     60
-	dof 2
-	focalPlaneDist 200
-	numSamples 100
 }
 
 // 3. The floor node:

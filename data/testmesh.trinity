@@ -25,7 +25,7 @@ RectLight l1 {
 */
 PointLight l1 {
 	pos   (-750, 1200, -750)
-	col   (1, 1, 1)
+	color   (1, 1, 1)
 	power 1200000
 }
 

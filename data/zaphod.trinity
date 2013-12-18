@@ -18,7 +18,7 @@ GlobalSettings {
 PointLight l1 {
 	pos    (200, 200, -200)           # Simulates my incadescent lamp in the center of the room
 	power   100000
-	col  (1.03000, 1.01000, 0.75800)      # Simulates the yellowish color of the incadescent lamp
+	color  (1.03000, 1.01000, 0.75800)      # Simulates the yellowish color of the incadescent lamp
 }
 
 Camera camera {

@@ -6,9 +6,12 @@ GlobalSettings {
 	frameWidth      1024
 	frameHeight     768
 	ambientLight    (0.25, 0.25, 0.25)
-	lightPos	(6000, 2000, -30)
-	lightPower  50000000
-	lightColor      (1, 1, 1)
+}
+
+PointLight sun {
+	pos	(6000, 2000, -30)
+	power  50000000
+	color      (1, 1, 1)
 }
 
 // Island - sunset view

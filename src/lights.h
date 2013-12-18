@@ -28,10 +28,10 @@
 
 class Light: public SceneElement {
 protected:
-	Color col;
+	Color color;
 	float power;
 public:
-	Light() { col.makeZero(); power = 0; }
+	Light() { color.makeZero(); power = 0; }
 	virtual ~Light() {}
 	
 	virtual int getNumSamples() = 0;
@@ -40,7 +40,7 @@ public:
 	virtual ElementType getElementType() const { return ELEM_LIGHT; }
 	virtual void fillProperties(ParsedBlock& pb)
 	{
-		pb.getColorProp("col", &col);
+		pb.getColorProp("color", &color);
 		pb.getFloatProp("power", &power);
 	}
 };
