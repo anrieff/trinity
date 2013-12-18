@@ -8,9 +8,12 @@ GlobalSettings {
 	frameWidth          768
 	frameHeight         512
 	ambientLight        (0.28, 0.30, 0.35)
-	lightPos            (160, 80, 40)
-	lightPower           5000
-	lightColor          (1, 1, 1)
+}
+
+PointLight l1 {
+	pos            (160, 80, 40)
+	power           5000
+	color          (1, 1, 1)
 }
 
 // 2. A camera
