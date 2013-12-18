@@ -35,5 +35,8 @@ void RectLight::getNthSample(int sampleIdx, const Vector& shadePos, Vector& samp
 	
 	Vector sampleCanonical(sx - 0.5, 0, sy - 0.5);
 	samplePos = T.point(sampleCanonical);
-	color = this->color * this->power;
+	Vector shadePos_LS = shadePosCanonical - sampleCanonical;
+	// return light color, attenuated by the angle of incidence
+	// (the cosine between the light's direction and the normed ray toward the hitpos)
+	color = this->color * (this->power * float(dot(Vector(0, -1, 0), shadePos_LS) / shadePos_LS.length()));
 }
