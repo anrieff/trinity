@@ -23,13 +23,16 @@ void RectLight::getNthSample(int sampleIdx, const Vector& shadePos, Vector& samp
 {
 	Random& R = getRandomGen();
 	
+	// convert the shade point onto the light's canonic space:
 	Vector shadePosCanonical = T.undoPoint(shadePos);
 	
+	// shade point "behind" the lamp?
 	if (shadePosCanonical.y > 0) {
 		color.makeZero();
 		return;
 	}
 	
+	// stratified sampling:
 	float sx = (sampleIdx % xSubd + R.randfloat()) / xSubd;
 	float sy = (sampleIdx / xSubd + R.randfloat()) / ySubd;
 	
