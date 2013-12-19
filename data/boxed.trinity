@@ -2,7 +2,7 @@
 GlobalSettings {
 	frameWidth          640
 	frameHeight         480
-	ambientLight        (0.15, 0.15, 0.15)
+	ambientLight        (0.075, 0.075, 0.075)
 	maxTraceDepth 8
 }
 
