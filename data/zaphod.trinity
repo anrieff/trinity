@@ -18,7 +18,7 @@ GlobalSettings {
 PointLight l1 {
 	pos    (200, 200, -200)           # Simulates my incadescent lamp in the center of the room
 	power   100000
-	color  (1.03000, 1.01000, 0.75800)      # Simulates the yellowish color of the incadescent lamp
+	color  (0.351, 0.332, 0.187)      # Simulates the yellowish color of the incadescent lamp
 }
 
 Camera camera {
@@ -29,7 +29,7 @@ Camera camera {
 	fov           38      # This is probably not quite correct; should probably be closer to 46 degrees (35mm on APS-C sensor)
 	aspect        1.5
 	dof           on
-	focalPlaneDist 25
+	focalPlaneDist 25.29
 	fNumber       11     # This is also not quite correct, the actual aperture was f/2.0
 	numSamples       400
 }
