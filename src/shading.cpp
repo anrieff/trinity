@@ -174,8 +174,8 @@ Color Refl::shade(Ray ray, const IntersectionData& data)
 		orthonormedSystem(N, a, b);
 		Color result(0, 0, 0);
 		double scaling = tan((1 - glossiness) * PI/2);
-		// hack: avoid combinatorial explosion with inter-reflecting glossy surfaces:
-		int samplesWanted = ray.depth == 0 ? numSamples : 5;
+		// avoid combinatorial explosion with inter-reflecting glossy surfaces:
+		int samplesWanted = (ray.flags & RF_GLOSSY) ? 5 : numSamples;
 		for (int i = 0; i < samplesWanted; i++) {
 			Vector reflected;
 			do {
@@ -198,6 +198,7 @@ Color Refl::shade(Ray ray, const IntersectionData& data)
 			newRay.start = data.p + N * 1e-6;
 			newRay.dir = reflected;
 			newRay.depth = ray.depth + 1;
+			newRay.flags |= RF_GLOSSY;
 			result += raytrace(newRay) * color;
 		}
 		return result / samplesWanted;

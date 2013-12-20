@@ -188,9 +188,20 @@ inline Vector unproject(const Vector& v, int a, int b, int c)
 	return result;
 }
 
+// flags that mark a ray in some way, so the behaviour of the raytracer can be altered.
 enum RayFlags {
+	// RF_DEBUG - the ray is a debug one (launched from a mouse-click on the rendered image).
+	// raytrace() prints diagnostics when it encounters such a ray.
 	RF_DEBUG    = 0x0001,
+	
+	// RF_SHADOW - the ray is a shadow ray. This hints the raytracer to skip some calculations
+	// (since the IntersectionData won't be used for shading), and to disable backface culling
+	// for Mesh objects.
 	RF_SHADOW   = 0x0002,
+	
+	// RF_GLOSSY - the ray has hit some glossy surface somewhere along the way.
+	// so if it meets a new glossy surface, it can safely use lower sampling settings.
+	RF_GLOSSY   = 0x0004,
 };
 
 struct Ray {
