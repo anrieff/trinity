@@ -42,7 +42,7 @@ Color raytrace(Ray ray)
 	
 	if (ray.depth > scene.settings.maxTraceDepth) return Color(0, 0, 0);
 
-	if (ray.debug)
+	if (ray.flags & RF_DEBUG)
 		cout << "  Raytrace[start = " << ray.start << ", dir = " << ray.dir << "]\n";
 
 	data.dist = 1e99;
@@ -58,7 +58,7 @@ Color raytrace(Ray ray)
 		return Color(0, 0, 0);
 	}
 	
-	if (ray.debug) {
+	if (ray.flags & RF_DEBUG) {
 		cout << "    Hit " << closestNode->geom->getName() << " at distance " << fixed << setprecision(2) << data.dist << endl;
 		cout << "      Intersection point: " << data.p << endl;
 		cout << "      Normal:             " << data.normal << endl;
@@ -81,6 +81,7 @@ bool testVisibility(const Vector& from, const Vector& to)
 	ray.start = from;
 	ray.dir = to - from;
 	ray.dir.normalize();
+	ray.flags |= RF_SHADOW;
 	
 	IntersectionData temp;
 	temp.dist = (to - from).length();
@@ -263,7 +264,7 @@ void handleMouse(SDL_MouseButtonEvent *mev)
 	if (mev->button != 1) return; // only consider the left mouse button
 	printf("Mouse click from (%d, %d)\n", (int) mev->x, (int) mev->y);
 	Ray ray = scene.camera->getScreenRay(mev->x, mev->y);
-	ray.debug = true;
+	ray.flags |= RF_DEBUG;
 	raytrace(ray);
 	printf("Raytracing completed!\n");
 }

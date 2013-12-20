@@ -188,18 +188,23 @@ inline Vector unproject(const Vector& v, int a, int b, int c)
 	return result;
 }
 
+enum RayFlags {
+	RF_DEBUG    = 0x0001,
+	RF_SHADOW   = 0x0002,
+};
+
 struct Ray {
 	Vector start, dir;
-	bool debug;
+	int flags;
 	int depth;
 	Ray() {
-		debug = false;
+		flags = 0;
 		depth = 0;
 	}
 	Ray(const Vector& _start, const Vector& _dir) {
 		start = _start;
 		dir = _dir;
-		debug = false;
+		flags = 0;
 		depth = 0;
 	}
 };
