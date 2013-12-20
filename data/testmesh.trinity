@@ -99,6 +99,7 @@ Mesh mesh {
 //	file		"geom/newwine.obj"
 //	file	 	"geom/truncated_cube.obj"
 //	backfaceCulling false
+	faceted     false
 }
 
 Checker checker {

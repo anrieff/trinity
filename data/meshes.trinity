@@ -65,6 +65,7 @@ Node floorNode {
 
 Mesh dice {
 	file "geom/truncated_cube.obj"
+	faceted true
 }
 
 BumpTexture diceBump {
