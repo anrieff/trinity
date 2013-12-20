@@ -53,6 +53,8 @@
 		<Unit filename="src/geometry.h" />
 		<Unit filename="src/heightfield.cpp" />
 		<Unit filename="src/heightfield.h" />
+		<Unit filename="src/lights.cpp" />
+		<Unit filename="src/lights.h" />
 		<Unit filename="src/main.cpp" />
 		<Unit filename="src/matrix.cpp" />
 		<Unit filename="src/matrix.h" />
