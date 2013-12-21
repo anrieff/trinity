@@ -113,6 +113,16 @@ inline bool tooDifferent(const Color& a, const Color& b)
 	return false;
 }
 
+// combine the results from the "left" and "right" camera for a single pixel.
+// the implementation here creates an anaglyph image: it desaturates the input
+// colors, masks them (left=red, right=cyan) and then merges them.
+static inline Color combineStereo(Color left, Color right)
+{
+	left.adjustSaturation(0.25f);
+	right.adjustSaturation(0.25f);
+	return left * Color(1, 0, 0) + right * Color(0, 1, 1);
+}
+
 // trace a ray through pixel coords (x, y).
 Color renderSample(double x, double y)
 {
@@ -120,11 +130,25 @@ Color renderSample(double x, double y)
 		Color average(0, 0, 0);
 		Random& R = getRandomGen();
 		for (int i = 0; i < scene.camera->numSamples; i++) {
-			average += raytrace(scene.camera->getScreenRay(x + R.randdouble(), y + R.randdouble()));
+			if (scene.camera->stereoSeparation == 0) // stereoscopic rendering?
+				average += raytrace(scene.camera->getScreenRay(x + R.randdouble(), y + R.randdouble()));
+			else {
+				average += combineStereo(
+					raytrace(scene.camera->getScreenRay(x + R.randdouble(), y + R.randdouble(), CAMERA_LEFT)),
+					raytrace(scene.camera->getScreenRay(x + R.randdouble(), y + R.randdouble(), CAMERA_RIGHT))
+				);
+			}
 		}
 		return average / scene.camera->numSamples;
 	} else {
-		return raytrace(scene.camera->getScreenRay(x, y));
+		if (scene.camera->stereoSeparation == 0)
+			return raytrace(scene.camera->getScreenRay(x, y));
+		else
+			// trace one ray through the left camera and one ray through the right, then combine the results	
+			return combineStereo(
+				raytrace(scene.camera->getScreenRay(x, y, CAMERA_LEFT)),
+				raytrace(scene.camera->getScreenRay(x, y, CAMERA_RIGHT))
+			);
 	}
 }
 

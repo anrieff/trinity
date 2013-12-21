@@ -60,7 +60,7 @@ void Camera::beginFrame(void)
 	downLeft += pos;
 }
 
-Ray Camera::getScreenRay(double x, double y)
+Ray Camera::getScreenRay(double x, double y, int camera)
 {
 	Ray result; // A, B -     C = A + (B - A) * x
 	result.start = this->pos;
@@ -72,6 +72,11 @@ Ray Camera::getScreenRay(double x, double y)
 	result.dir = target - this->pos;
 	
 	result.dir.normalize();
+	
+	if (camera != CAMERA_CENTER) {
+		// offset left/right for stereoscopic rendering
+		result.start += rightDir * (camera == CAMERA_RIGHT ? +stereoSeparation : -stereoSeparation);
+	}
 	
 	if (!dof) return result;
 	
@@ -88,6 +93,9 @@ Ray Camera::getScreenRay(double x, double y)
 	dy *= discMultiplier;
 	
 	result.start = this->pos + dx * rightDir + dy * upDir;
+	if (camera != CAMERA_CENTER) {
+		result.start += rightDir * (camera == CAMERA_RIGHT ? +stereoSeparation : -stereoSeparation);
+	}
 	result.dir = (T - result.start);
 	result.dir.normalize();
 	return result;

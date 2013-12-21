@@ -23,6 +23,12 @@
 #include "vector.h"
 #include "scene.h"
 
+enum {
+	CAMERA_CENTER,
+	CAMERA_LEFT,
+	CAMERA_RIGHT,
+};
+
 class Camera: public SceneElement {
 	// these internal vectors describe three of the ends of the imaginary
 	// ray shooting screen
@@ -40,8 +46,10 @@ public:
 	bool dof; // on or off
 	int numSamples;
 	double discMultiplier;
+	double stereoSeparation;
 	
-	Camera() { dof = false; fNumber = 1.0; focalPlaneDist = 1; numSamples = 25; }
+	Camera() { dof = false; fNumber = 1.0; focalPlaneDist = 1; numSamples = 25;
+		stereoSeparation = 0; }
 	
 	// from SceneElement:
 	void beginFrame(); //!< must be called before each frame. Computes the corner variables, needed for getScreenRay()
@@ -60,11 +68,14 @@ public:
 		pb.getDoubleProp("fNumber", &fNumber);
 		pb.getBoolProp("dof", &dof);
 		pb.getIntProp("numSamples", &numSamples);
+		pb.getDoubleProp("stereoSeparation", &stereoSeparation);
 		discMultiplier = 10.0 / fNumber;
 	}
 	
 	/// generates a screen ray through a pixel (x, y - screen coordinates, not necessarily integer).
-	Ray getScreenRay(double x, double y);
+	/// if the camera parameter is present - offset the rays' start to the left or to the right,
+	/// for use in stereoscopic rendering
+	Ray getScreenRay(double x, double y, int camera = CAMERA_CENTER);
 };
 
 #endif // __CAMERA_H__
