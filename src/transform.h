@@ -86,6 +86,20 @@ public:
 		return dir * inverseTransform;
 	}
 
+	Ray ray(const Ray& inputRay) const {
+		Ray result = inputRay;
+		result.start = point(inputRay.start);
+		result.dir   = direction(inputRay.dir);
+		return result;
+	}
+
+	Ray undoRay(const Ray& inputRay) const {
+		Ray result = inputRay;
+		result.start = undoPoint(inputRay.start);
+		result.dir   = undoDirection(inputRay.dir);
+		return result;
+	}
+
 private:
 	Matrix transform;
 	Matrix inverseTransform;

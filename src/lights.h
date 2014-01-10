@@ -34,6 +34,8 @@ protected:
 public:
 	Light() { color.makeZero(); power = 0; }
 	virtual ~Light() {}
+	
+	Color getColor() const { return color * power; }
 
 	/// get the number of samples this light requires (must be strictly positive)
 	virtual int getNumSamples() = 0;
@@ -58,6 +60,15 @@ public:
 		pb.getColorProp("color", &color);
 		pb.getFloatProp("power", &power);
 	}
+	
+	/**
+	 * intersects a ray with the light. The param intersectionDist is in/out;
+	 * it's behaviour is similar to Intersectable::intersect()'s treatment of distances.
+	 * @retval true, if the ray intersects the light, and the intersection distance is smaller
+	 *               than the current value of intersectionDist (which is updated upon return)
+	 * @retval false, otherwise.
+	 */
+	virtual bool intersect(const Ray& ray, double& intersectionDist) = 0;
 };
 
 /// The good ol' point light
@@ -66,6 +77,7 @@ class PointLight: public Light {
 public:
 	int getNumSamples();
 	void getNthSample(int sampleIdx, const Vector& shadePos, Vector& samplePos, Color& color);
+	bool intersect(const Ray& ray, double& intersectionDist);
 	
 	void fillProperties(ParsedBlock& pb)
 	{
@@ -79,19 +91,20 @@ public:
 /// light is a 1x1 square, positioned in (0, 0, 0), pointing in the direction of -Y. The
 /// light is one-sided (the +Y hemisphere doesn't get any light).
 class RectLight: public Light {
-	Transform T;
+	Transform transform;
 	int xSubd, ySubd;
 public:
-	RectLight(): Light() { xSubd = 2; ySubd = 2; T.reset(); }
+	RectLight(): Light() { xSubd = 2; ySubd = 2; transform.reset(); }
 	int getNumSamples();
 	void getNthSample(int sampleIdx, const Vector& shadePos, Vector& samplePos, Color& color);
+	bool intersect(const Ray& ray, double& intersectionDist);
 	
 	void fillProperties(ParsedBlock& pb)
 	{
 		Light::fillProperties(pb);
 		pb.getIntProp("xSubd", &xSubd, 1);
 		pb.getIntProp("ySubd", &ySubd, 1);
-		pb.getTransformProp(T);
+		pb.getTransformProp(transform);
 	}
 };
 

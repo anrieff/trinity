@@ -30,6 +30,7 @@
 #include "mesh.h"
 #include "random_generator.h"
 #include "scene.h"
+#include "lights.h"
 using namespace std;
 
 Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE]; //!< virtual framebuffer
@@ -51,6 +52,17 @@ Color raytrace(Ray ray)
 	for (int i = 0; i < (int) scene.nodes.size(); i++)
 		if (scene.nodes[i]->intersect(ray, data))
 			closestNode = scene.nodes[i];
+
+	// check if the closest intersection point is actually a light:
+	bool hitLight = false;
+	Color hitLightColor;
+	for (int i = 0; i < (int) scene.lights.size(); i++) {
+		if (scene.lights[i]->intersect(ray, data.dist)) {
+			hitLight = true;
+			hitLightColor = scene.lights[i]->getColor();
+		}
+	}
+	if (hitLight) return hitLightColor;
 
 	// no intersection? use the environment, if present:
 	if (!closestNode) {
