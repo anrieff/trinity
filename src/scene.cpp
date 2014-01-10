@@ -824,6 +824,8 @@ GlobalSettings::GlobalSettings()
 	dbg = false;
 	maxTraceDepth = 4;
 	ambientLight.makeZero();
+	gi = false;
+	numPaths = 40;
 }
 
 void GlobalSettings::fillProperties(ParsedBlock& pb)
@@ -836,6 +838,8 @@ void GlobalSettings::fillProperties(ParsedBlock& pb)
 	pb.getBoolProp("wantPrepass", &wantPrepass);
 	pb.getBoolProp("wantAA", &wantAA);
 	pb.getDoubleProp("aaThresh", &aaThresh);
+	pb.getBoolProp("gi", &gi);
+	pb.getIntProp("numPaths", &numPaths, 1);
 }
 
 SceneElement* DefaultSceneParser::newSceneElement(const char* className)

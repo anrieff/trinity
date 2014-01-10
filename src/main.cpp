@@ -34,6 +34,7 @@
 using namespace std;
 
 Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE]; //!< virtual framebuffer
+bool testVisibility(const Vector& from, const Vector& to);
 
 /// traces a ray in the scene and returns the visible light that comes from that direction
 Color raytrace(Ray ray)
@@ -84,6 +85,86 @@ Color raytrace(Ray ray)
 	// use the shader of the closest node to shade the intersection:
 	return closestNode->shader->shade(ray, data);
 }
+
+Color pathtrace(const Ray& ray, const Color& pathMultiplier, Random& rgen)
+{
+	IntersectionData data;
+	Node* closestNode = NULL;
+	
+	if (ray.depth > scene.settings.maxTraceDepth) return Color(0, 0, 0);
+
+	data.dist = 1e99;
+	
+	// find closest intersection point:
+	for (int i = 0; i < (int) scene.nodes.size(); i++)
+		if (scene.nodes[i]->intersect(ray, data))
+			closestNode = scene.nodes[i];
+
+	// check if the closest intersection point is actually a light:
+	bool hitLight = false;
+	Color hitLightColor;
+	for (int i = 0; i < (int) scene.lights.size(); i++) {
+		if (scene.lights[i]->intersect(ray, data.dist)) {
+			hitLight = true;
+			hitLightColor = scene.lights[i]->getColor();
+		}
+	}
+	if (hitLight) {
+		if (ray.flags & RF_DIFFUSE)
+			return Color(0, 0, 0);
+		else
+			return hitLightColor * pathMultiplier;
+	}
+	// no intersection? use the environment, if present:
+	if (!closestNode) {
+		if (scene.environment != NULL)
+			return scene.environment->getEnvironment(ray.dir) * pathMultiplier;
+		return Color(0, 0, 0);
+	}
+	
+	Color resultDirect(0, 0, 0);
+	
+	if (!scene.lights.empty()) {
+		int lightIndex = rgen.randint(0, scene.lights.size() - 1);
+		Light* light = scene.lights[lightIndex];
+		int numLightSamples = light->getNumSamples();
+		int lightSampleIdx = rgen.randint(0, numLightSamples - 1);
+		Vector pointOnLight;
+		Color lightColor;
+		light->getNthSample(lightSampleIdx, data.p, pointOnLight, lightColor);
+		if (lightColor.intensity() > 0 && testVisibility(data.p + data.normal * 1e-6, pointOnLight)) {
+			Ray w_out;
+			w_out.start = data.p + data.normal * 1e-6;
+			w_out.dir = pointOnLight - w_out.start;
+			w_out.dir.normalize();
+			//
+			float solidAngle = light->solidAngle(w_out.start);
+			Color brdfAtPoint = closestNode->shader->eval(data, ray, w_out);
+			float cosNormVout = max(0.0, dot(data.normal, w_out.dir));
+			
+			lightColor = light->getColor() * solidAngle / (2*PI);
+			
+			float pdf = solidAngle / (2*PI);
+			
+			pdf *= 1.0 / scene.lights.size();
+			
+			resultDirect = lightColor * pathMultiplier * brdfAtPoint * cosNormVout / pdf / PI; 
+		}
+	}
+
+	Ray w_out;
+	Color brdfEval;
+	float pdf;
+	closestNode->shader->spawnRay(data, ray, w_out, brdfEval, pdf);
+	
+	if (pdf < 0) return Color(1, 0, 0);
+	if (pdf == 0) return Color(0, 0, 0);
+	Color resultGi;
+	resultGi = pathtrace(w_out, pathMultiplier * brdfEval / pdf, rgen);
+	
+	return resultDirect + resultGi;
+}
+
 
 /// checks for visibility between points `from' and `to'
 /// (from is assumed to be near a surface, whereas to is near a light)
@@ -136,22 +217,33 @@ static inline Color combineStereo(Color left, Color right)
 }
 
 // trace a ray through pixel coords (x, y).
-Color renderSample(double x, double y)
+Color renderSample(double x, double y, int dx = 1, int dy = 1)
 {
 	if (scene.camera->dof) {
 		Color average(0, 0, 0);
 		Random& R = getRandomGen();
 		for (int i = 0; i < scene.camera->numSamples; i++) {
 			if (scene.camera->stereoSeparation == 0) // stereoscopic rendering?
-				average += raytrace(scene.camera->getScreenRay(x + R.randdouble(), y + R.randdouble()));
+				average += raytrace(scene.camera->getScreenRay(x + R.randdouble() * dx, y + R.randdouble() * dy));
 			else {
 				average += combineStereo(
-					raytrace(scene.camera->getScreenRay(x + R.randdouble(), y + R.randdouble(), CAMERA_LEFT)),
-					raytrace(scene.camera->getScreenRay(x + R.randdouble(), y + R.randdouble(), CAMERA_RIGHT))
+					raytrace(scene.camera->getScreenRay(x + R.randdouble() * dx, y + R.randdouble() * dy, CAMERA_LEFT)),
+					raytrace(scene.camera->getScreenRay(x + R.randdouble() * dx, y + R.randdouble() * dy, CAMERA_RIGHT))
 				);
 			}
 		}
 		return average / scene.camera->numSamples;
+	} else if (scene.settings.gi) {
+		Color average(0, 0, 0);
+		Random& R = getRandomGen();
+		for (int i = 0; i < scene.settings.numPaths; i++) {
+			average += pathtrace(
+				scene.camera->getScreenRay(x + R.randdouble() * dx, y + R.randdouble() * dy),
+				Color(1, 1, 1),
+				R
+			);
+		}
+		return average / scene.settings.numPaths;
 	} else {
 		if (scene.camera->stereoSeparation == 0)
 			return raytrace(scene.camera->getScreenRay(x, y));
@@ -165,9 +257,9 @@ Color renderSample(double x, double y)
 }
 
 // gets the color for a single pixel, without antialiasing
-Color renderPixelNoAA(int x, int y)
+Color renderPixelNoAA(int x, int y, int dx = 1, int dy = 1)
 {
-	vfb[y][x] = renderSample(x, y);
+	vfb[y][x] = renderSample(x, y, dx, dy);
 	return vfb[y][x];
 }
 
@@ -198,7 +290,7 @@ void renderScene(void)
 	int H = frameHeight();
 	
 	std::vector<Rect> buckets = getBucketsList();
-	if (scene.settings.wantPrepass) {
+	if (scene.settings.wantPrepass || scene.settings.gi) {
 		// We render the whole screen in three passes.
 		// 1) First pass - use very coarse resolution rendering, tracing a single ray for a 16x16 block:
 		for (size_t i = 0; i < buckets.size(); i++) {
@@ -207,7 +299,7 @@ void renderScene(void)
 				int ey = min(r.h, dy + 16);
 				for (int dx = 0; dx < r.w; dx += 16) {
 					int ex = min(r.w, dx + 16);
-					Color c = renderPixelNoAA(r.x0 + dx + (ex - dx) / 2, r.y0 + dy + (ey - dy) / 2);
+					Color c = renderPixelNoAA(r.x0 + dx, r.y0 + dy, ex - dx, ey - dy);
 					if (!drawRect(Rect(r.x0 + dx, r.y0 + dy, r.x0 + ex, r.y0 + ey), c))
 						return;
 				}
@@ -226,7 +318,7 @@ void renderScene(void)
 			return;
 	}
 
-	if (scene.settings.wantAA && !scene.camera->dof) {
+	if (scene.settings.wantAA && !scene.camera->dof && !scene.settings.gi) {
 		// second pass: find pixels, that need anti-aliasing, by analyzing their neighbours
 		for (int y = 0; y < H; y++) {
 			for (int x = 0; x < W; x++) {
@@ -301,7 +393,10 @@ void handleMouse(SDL_MouseButtonEvent *mev)
 	printf("Mouse click from (%d, %d)\n", (int) mev->x, (int) mev->y);
 	Ray ray = scene.camera->getScreenRay(mev->x, mev->y);
 	ray.flags |= RF_DEBUG;
-	raytrace(ray);
+	if (scene.settings.gi)
+		pathtrace(ray, Color(1, 1, 1), getRandomGen());
+	else
+		raytrace(ray);
 	printf("Raytracing completed!\n");
 }
 

@@ -25,8 +25,16 @@
 #include "geometry.h"
 #include "bitmap.h"
 
+class BRDF {
+public:
+	virtual Color eval(const IntersectionData& x, const Ray& w_in, const Ray& w_out);
+
+	virtual void spawnRay(const IntersectionData& x, const Ray& w_in, 
+		Ray& w_out, Color& colorEval, float& pdf);
+};
+
 /// An abstract class, representing a shader in our scene.
-class Shader: public SceneElement {
+class Shader: public SceneElement, public BRDF {
 protected:
 	Color color;
 public:
@@ -115,6 +123,11 @@ public:
 		Shader::fillProperties(pb);
 		pb.getTextureProp("texture", &texture);
 	}
+
+	Color eval(const IntersectionData& x, const Ray& w_in, const Ray& w_out);
+
+	void spawnRay(const IntersectionData& x, const Ray& w_in, 
+		Ray& w_out, Color& colorEval, float& pdf);
 };
 
 /// A Phong shader
@@ -151,6 +164,10 @@ public:
 		pb.getDoubleProp("glossiness", &glossiness, 0, 1);
 		pb.getIntProp("numSamples", &numSamples, 1);
 	}
+	Color eval(const IntersectionData& x, const Ray& w_in, const Ray& w_out);
+
+	void spawnRay(const IntersectionData& x, const Ray& w_in, 
+		Ray& w_out, Color& colorEval, float& pdf);
 };
 
 class Refr: public Shader {
@@ -163,6 +180,10 @@ public:
 		Shader::fillProperties(pb);
 		pb.getFloatProp("ior", &ior, 1e-6, 10);
 	}
+	Color eval(const IntersectionData& x, const Ray& w_in, const Ray& w_out);
+
+	void spawnRay(const IntersectionData& x, const Ray& w_in, 
+		Ray& w_out, Color& colorEval, float& pdf);
 };
 
 class Layered: public Shader {

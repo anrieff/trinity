@@ -202,6 +202,9 @@ enum RayFlags {
 	// RF_GLOSSY - the ray has hit some glossy surface somewhere along the way.
 	// so if it meets a new glossy surface, it can safely use lower sampling settings.
 	RF_GLOSSY   = 0x0004,
+	
+	// last constituent of a ray path was a diffuse surface
+	RF_DIFFUSE  = 0x0008,
 };
 
 struct Ray {

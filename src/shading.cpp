@@ -19,14 +19,26 @@
  ***************************************************************************/
 
 #include <string.h>
+#include <algorithm>
 #include "lights.h"
 #include "shading.h"
 #include "random_generator.h"
 
+using std::max;
+
 extern bool testVisibility(const Vector& from, const Vector& to);
 extern Color raytrace(Ray ray);
 
+Color BRDF::eval(const IntersectionData& x, const Ray& w_in, const Ray& w_out)
+{
+	return Color(1, 0, 0);
+}
 
+void BRDF::spawnRay(const IntersectionData& x, const Ray& w_in, Ray& w_out, Color& colorEval, float& pdf)
+{
+	colorEval = Color(1, 0, 0);
+	pdf = -1;
+}
 
 Shader::Shader(const Color& color)
 {
@@ -84,6 +96,51 @@ Color Lambert::shade(Ray ray, const IntersectionData& data)
 		lightContrib += avgColor / numSamples;
 	}
 	return diffuseColor * lightContrib;
+}
+
+Color Lambert::eval(const IntersectionData& x, const Ray& w_in, const Ray& w_out)
+{
+	Vector N = faceforward(w_in.dir, x.normal);
+	Color diffuseColor = this->color;
+	if (texture) diffuseColor = texture->getTexColor(w_in, x.u, x.v, N);
+	return diffuseColor * (1 / PI) * max(0.0, dot(w_out.dir, N));
+}
+
+Vector hemisphereSample(const Vector& normal)
+{
+	Random& rgen = getRandomGen();
+	
+	double u = rgen.randdouble();
+	double v = rgen.randdouble();
+	
+	double theta = 2 * PI * u;
+	double phi = acos(2 * v  -1);
+	
+	Vector res(
+		cos(theta) * cos(phi),
+		sin(phi),
+		sin(theta) * cos(phi)
+	);
+	
+	if (dot(res, normal) < 0)
+		res = -res;
+	return res;
+}
+
+void Lambert::spawnRay(const IntersectionData& x, const Ray& w_in, Ray& w_out, Color& colorEval, float& pdf)
+{
+	Vector N = faceforward(w_in.dir, x.normal);
+	Color diffuseColor = this->color;
+	if (texture) diffuseColor = texture->getTexColor(w_in, x.u, x.v, N);
+
+	w_out = w_in;
+	
+	w_out.depth++;
+	w_out.start = x.p + N * 1e-6;
+	w_out.dir = hemisphereSample(N);
+	w_out.flags = w_out.flags | RF_DIFFUSE;
+	colorEval = diffuseColor * (1 / PI) * max(0.0, dot(w_out.dir, N));
+	pdf = 1 / PI;
 }
 
 Color Phong::shade(Ray ray, const IntersectionData& data)
@@ -205,6 +262,36 @@ Color Refl::shade(Ray ray, const IntersectionData& data)
 	}
 }
 
+Color Refl::eval(const IntersectionData& x, const Ray& w_in, const Ray& w_out)
+{
+	if (glossiness < 1) {	
+		return Shader::eval(x, w_in, w_out);
+	}
+	
+	// if (reflect(w_in.dir) == w_out.dir) return INF;
+	return Color(0, 0, 0);
+}
+
+void Refl::spawnRay(const IntersectionData& x, const Ray& w_in, Ray& w_out, Color& colorEval, float& pdf)
+{
+	if (glossiness < 1) {	
+		return Shader::spawnRay(x, w_in, w_out, colorEval, pdf);
+	}
+	Vector N = faceforward(w_in.dir, x.normal);
+	
+	// The material is't glossy: simple reflection, launch a single ray:
+	Vector reflected = reflect(w_in.dir, N);
+	
+	w_out = w_in;
+	w_out.start = x.p + N * 1e-6;
+	w_out.dir = reflected;
+	w_out.depth++;
+	w_out.flags &= ~RF_DIFFUSE;
+
+	colorEval = color * Color(1e16, 1e16, 1e16);
+	pdf = 1e16;
+}
+
 Color Refr::shade(Ray ray, const IntersectionData& data)
 {
 	Vector N = faceforward(ray.dir, data.normal);
@@ -226,6 +313,41 @@ Color Refr::shade(Ray ray, const IntersectionData& data)
 	newRay.dir = refracted;
 	newRay.depth = ray.depth + 1;
 	return raytrace(newRay) * color;
+}
+
+Color Refr::eval(const IntersectionData& x, const Ray& w_in, const Ray& w_out)
+{
+	return Color(0, 0, 0);
+}
+
+void Refr::spawnRay(const IntersectionData& x, const Ray& w_in, Ray& w_out, Color& colorEval, float& pdf)
+{
+	Vector N = faceforward(w_in.dir, x.normal);
+	
+	// refract() expects the ratio of IOR_WE_ARE_EXITING : IOR_WE_ARE_ENTERING.
+	// the ior parameter has the ratio of this material to vacuum, so if we're
+	// entering the geometry, be sure to take the reciprocal
+	float eta = ior;
+	if (dot(w_in.dir, x.normal) < 0)
+		eta = 1.0f / eta;
+	
+	Vector refracted = refract(w_in.dir, N, eta);
+	
+	// total inner refraction:
+	if (refracted.lengthSqr() == 0) {
+		pdf = 0;
+		colorEval.makeZero();
+		return;
+	}
+	
+	w_out = w_in;
+	w_out.start = x.p + w_in.dir * 1e-6;
+	w_out.dir = refracted;
+	w_out.depth++;
+	w_out.flags &= ~RF_DIFFUSE;
+
+	colorEval = color * Color(1e16, 1e16, 1e16);
+	pdf = 1e16;
 }
 
 void Layered::addLayer(Shader* shader, const Color& blend, Texture* texture)

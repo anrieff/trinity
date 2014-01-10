@@ -246,7 +246,9 @@ struct GlobalSettings: public SceneElement {
 	
 	// AA-related:
 	bool wantAA, wantPrepass;    //!< Antialiasing flag and prepass (a quick low-resolution rendering) flag
+	bool gi;                     //!< Is GI on?
 	double aaThresh;             //!< The antialiasing color difference threshold (see renderScene)
+	int numPaths;                //!< paths per pixel
 	
 	int maxTraceDepth;           //!< Maximum recursion depth
 	

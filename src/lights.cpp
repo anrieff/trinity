@@ -18,6 +18,11 @@ bool PointLight::intersect(const Ray& ray, double& intersectionDist)
 	return false; // you can't intersect a point light
 }
 
+float PointLight::solidAngle(const Vector& x)
+{
+	return 0;
+}
+
 
 
 void RectLight::beginFrame(void)
@@ -82,3 +87,14 @@ bool RectLight::intersect(const Ray& ray, double& intersectionDist)
 	}
 	return false;
 }
+
+float RectLight::solidAngle(const Vector& x)
+{
+	Vector x_canonic = transform.undoPoint(x);
+	if (x_canonic.y >= 0) return 0;
+	Vector x_dir = normalize(x_canonic);
+	float cosA = dot(x_dir, Vector(0, -1, 0));
+	double d = (x - center).lengthSqr();
+	return area * cosA / (1 + d);
+}
+

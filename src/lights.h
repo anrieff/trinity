@@ -69,6 +69,8 @@ public:
 	 * @retval false, otherwise.
 	 */
 	virtual bool intersect(const Ray& ray, double& intersectionDist) = 0;
+	
+	virtual float solidAngle(const Vector& x) = 0;
 };
 
 /// The good ol' point light
@@ -78,7 +80,8 @@ public:
 	int getNumSamples();
 	void getNthSample(int sampleIdx, const Vector& shadePos, Vector& samplePos, Color& color);
 	bool intersect(const Ray& ray, double& intersectionDist);
-	
+	float solidAngle(const Vector& x);
+
 	void fillProperties(ParsedBlock& pb)
 	{
 		Light::fillProperties(pb);
@@ -101,6 +104,7 @@ public:
 	int getNumSamples();
 	void getNthSample(int sampleIdx, const Vector& shadePos, Vector& samplePos, Color& color);
 	bool intersect(const Ray& ray, double& intersectionDist);
+	float solidAngle(const Vector& x);
 	
 	void fillProperties(ParsedBlock& pb)
 	{
