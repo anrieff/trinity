@@ -8,10 +8,11 @@ GlobalSettings {
 
 Camera camera {
 	pos          (278. 273. -800)
-	lookAt       (278, 273, -799)
-	upDir        (0, 1, 0)
-	fov           50
-	aspect   1
+	yaw          0
+	pitch        0
+	roll         0
+	fov         50
+	aspect       1
 }
 
 //////////////////////// LIGHTS ////////////////////////////////////////////
@@ -30,7 +31,7 @@ RectLight {
 	// Power (for DI):
 	power 9.15750915751
 	// Power (for GI):
-	power 27.472527472530004       // x3
+	//power 27.472527472530004       // x3
 }
 
 //////////////////////// GEOMETRIES ////////////////////////////////////////
