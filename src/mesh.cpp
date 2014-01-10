@@ -196,14 +196,28 @@ bool Mesh::intersectKD(KDTreeNode& node, const BBox& bbox, const Ray& ray, Inter
 		int childOrder[2] = { 0, 1 };
 		if (ray.start[node.axis] > node.splitPos)
 			swap(childOrder[0], childOrder[1]);
+		// 
 		BBox childBB[2];
 		bbox.split(node.axis, node.splitPos, childBB[0], childBB[1]);
-		for (int i = 0; i < 2; i++) if (childBB[childOrder[i]].testIntersect(ray)) { // if we intersect this bbox...
-			KDTreeNode& child = node.children[childOrder[i]];
-			if (intersectKD(child, childBB[childOrder[i]], ray, data)) // ... check if we intersect the child recursively,
-				return true;                                           // and return yes if so - as quickly as possible
+		// name the children bboxen:
+		BBox& firstBB = childBB[childOrder[0]];
+		BBox& secondBB = childBB[childOrder[1]];
+		KDTreeNode& firstChild = node.children[childOrder[0]];
+		KDTreeNode& secondChild = node.children[childOrder[1]];
+		// if the ray intersects the common wall between the two sub-boxes, then it invariably
+		// intersects both boxes (we can skip the testIntersect() checks):
+		// (see http://raytracing-bg.net/?q=node/68 )
+		if (bbox.intersectWall(node.axis, node.splitPos, ray)) {
+			if (intersectKD(firstChild, firstBB, ray, data)) return true;
+			return intersectKD(secondChild, secondBB, ray, data);
+		} else {
+			// if the wall isn't hit, then we intersect exclusively one of the sub-boxes;
+			// test one, if the test fails, then it's in the other:
+			if (firstBB.testIntersect(ray))
+				return intersectKD(firstChild, firstBB, ray, data);
+			else
+				return intersectKD(secondChild, secondBB, ray, data);
 		}
-		return false;
 	}
 }
 

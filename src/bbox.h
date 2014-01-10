@@ -104,7 +104,7 @@ struct BBox {
 			 * if we're considering the walls up and down of the bbox (which belong to the same axis),
 			 * the optimization in (*) says that we can skip testing with the "up" wall, if the "down"
 			 * wall is behind us. The rationale for that is, that we can never intersect the "down" wall,
-			 * and even if we have the chance to intersect the "up" wall, we'd be intersection the "right"
+			 * and even if we have the chance to intersect the "up" wall, we'd be intersecting the "right"
 			 * wall first. So we can just skip any further intersection tests for this axis.
 			 * This may seem bogus at first, as it doesn't work if the camera is inside the BBox, but then we would
 			 * have quitted the function because of the inside(ray.start) condition in the first line of the function.
@@ -202,6 +202,26 @@ struct BBox {
 		right = *this;
 		left.vmax[axis] = where;
 		right.vmin[axis] = where;
+	}
+	/// Checks if a ray intersects a single wall inside the BBox
+	/// Consider the intersection of the splitting plane as described in split(), and the BBox
+	/// (i.e., the "split wall"). We want to check if the ray intersects that wall.
+	inline bool intersectWall(Axis axis, double where, const Ray& ray) const
+	{
+		if (fabs(ray.dir[axis]) < 1e-9) return (fabs(ray.start[axis] - where) < 1e-9);
+		int u = (axis == 0) ? 1 : 0;
+		int v = (axis == 2) ? 1 : 2;
+		double toGo = where - ray.start[axis];
+		double rdirInAxis = 1.0 / ray.dir[axis];
+		// check if toGo and dirInAxis are of opposing signs:
+		if ((toGo * rdirInAxis) < 0) return false;
+		double d = toGo * rdirInAxis;
+		double tu = ray.start[u] + ray.dir[u] * d;
+		if (vmin[u] <= tu && tu <= vmax[u]) {
+			double tv = ray.start[v] + ray.dir[v] * d;
+			return (vmin[v] <= tv && tv <= vmax[v]);
+		}
+		return false;
 	}
 };
 
