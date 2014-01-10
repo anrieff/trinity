@@ -19,6 +19,19 @@ bool PointLight::intersect(const Ray& ray, double& intersectionDist)
 }
 
 
+
+void RectLight::beginFrame(void)
+{
+	center = transform.point(Vector(0, 0, 0));
+	Vector a = transform.point(Vector(-0.5, 0.0, -0.5));
+	Vector b = transform.point(Vector( 0.5, 0.0, -0.5));
+	Vector c = transform.point(Vector( 0.5, 0.0,  0.5));
+	float width = (float) (b - a).length();
+	float height = (float) (b - c).length();
+	area = width * height; // obtain the area of the light, in world space
+}
+
+
 int RectLight::getNumSamples()
 {
 	return xSubd * ySubd;
@@ -46,7 +59,7 @@ void RectLight::getNthSample(int sampleIdx, const Vector& shadePos, Vector& samp
 	Vector shadePos_LS = shadePosCanonical - sampleCanonical;
 	// return light color, attenuated by the angle of incidence
 	// (the cosine between the light's direction and the normed ray toward the hitpos)
-	color = this->color * (this->power * float(dot(Vector(0, -1, 0), shadePos_LS) / shadePos_LS.length()));
+	color = this->color * (area * this->power * float(dot(Vector(0, -1, 0), shadePos_LS) / shadePos_LS.length()));
 }
 
 bool RectLight::intersect(const Ray& ray, double& intersectionDist)

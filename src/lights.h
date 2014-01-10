@@ -57,8 +57,8 @@ public:
 	/// derived classes!!!
 	virtual void fillProperties(ParsedBlock& pb)
 	{
-		pb.getColorProp("color", &color);
-		pb.getFloatProp("power", &power);
+		if (!pb.getColorProp("color", &color)) pb.requiredProp("color");
+		if (!pb.getFloatProp("power", &power)) pb.requiredProp("power");
 	}
 	
 	/**
@@ -93,8 +93,11 @@ public:
 class RectLight: public Light {
 	Transform transform;
 	int xSubd, ySubd;
+	float area;
+	Vector center;
 public:
 	RectLight(): Light() { xSubd = 2; ySubd = 2; transform.reset(); }
+	void beginFrame(void);
 	int getNumSamples();
 	void getNthSample(int sampleIdx, const Vector& shadePos, Vector& samplePos, Color& color);
 	bool intersect(const Ray& ray, double& intersectionDist);

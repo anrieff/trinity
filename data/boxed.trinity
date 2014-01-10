@@ -24,7 +24,7 @@ RectLight l2 {
 	translate	(50, 50, -20)
 	scale   (8, 8, 8)
 	color	(1, 1, 1)
-	power   4000
+	power   62.5
 	rotate  (0, 45, 0)
 }
 
@@ -33,7 +33,7 @@ RectLight l_small {
 	rotate     (0, -62, 0)
 	scale      (10, 10, 10)
 	color	   (1, 1, 1)
-	power      4000
+	power      40
 	xSubd  4
 	ySubd  4
 }
