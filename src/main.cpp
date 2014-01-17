@@ -31,6 +31,7 @@
 #include "random_generator.h"
 #include "scene.h"
 #include "lights.h"
+#include "cxxptl_sdl.h"
 using namespace std;
 
 Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE]; //!< virtual framebuffer
@@ -312,6 +313,56 @@ Color renderPixelAA(int x, int y)
 	return vfb[y][x];
 }
 
+ThreadPool pool;
+
+class TaskNoAA: public Parallel
+{
+	const vector<Rect>& buckets;
+	InterlockedInt counter;
+public:
+	TaskNoAA(const vector<Rect>& buckets): buckets(buckets), counter(0)
+	{
+	}
+	
+	void entry(int thread_index, int thread_count)
+	{
+		// first pass: shoot just one ray per pixel
+		int i;
+		while ((i = counter++) < (int) buckets.size()) {
+			const Rect& r = buckets[i];
+			for (int y = r.y0; y < r.y1; y++)
+				for (int x = r.x0; x < r.x1; x++)
+					renderPixelNoAA(x, y);
+			if (!displayVFBRect(r, vfb))
+				return;
+		}
+		
+	}
+};
+
+class TaskAA: public Parallel {
+	const vector<Rect>& buckets;
+	InterlockedInt counter;
+public:
+	TaskAA(const vector<Rect>& buckets): buckets(buckets), counter(0)
+	{
+	}
+
+	void entry(int threadIndex, int threadCount ) {
+		int i;
+		while ((i = counter++) < (int) buckets.size()) {
+			const Rect& r = buckets[i];
+			if (!markRegion(r))
+				return;
+			for (int y = r.y0; y < r.y1; y++)
+				for (int x = r.x0; x < r.x1; x++)
+					if (needsAA[y][x]) renderPixelAA(x, y);
+			if (!displayVFBRect(r, vfb))
+				return;
+		}
+	}
+};
+
 
 void renderScene(void)
 {
@@ -336,16 +387,8 @@ void renderScene(void)
 		}
 	}
 
-	
-	// first pass: shoot just one ray per pixel
-	for (size_t i = 0; i < buckets.size(); i++) {
-		const Rect& r = buckets[i];
-		for (int y = r.y0; y < r.y1; y++)
-			for (int x = r.x0; x < r.x1; x++)
-				renderPixelNoAA(x, y);
-		if (!displayVFBRect(r, vfb))
-			return;
-	}
+	TaskNoAA task1(buckets);
+	pool.run(&task1, scene.settings.numThreads);
 
 	if (scene.settings.wantAA && !scene.camera->dof && !scene.settings.gi) {
 		// second pass: find pixels, that need anti-aliasing, by analyzing their neighbours
@@ -393,16 +436,8 @@ void renderScene(void)
 		 * after that.
 		 */
 		if (scene.settings.wantAA && !scene.camera->dof) {
-			for (size_t i = 0; i < buckets.size(); i++) {
-				const Rect& r = buckets[i];
-				if (!markRegion(r))
-					return;
-				for (int y = r.y0; y < r.y1; y++)
-					for (int x = r.x0; x < r.x1; x++)
-						if (needsAA[y][x]) renderPixelAA(x, y);
-				if (!displayVFBRect(r, vfb))
-					return;
-			}
+			TaskAA task2(buckets);
+			pool.run(&task2, scene.settings.numThreads);
 		}
 	}
 }
@@ -450,6 +485,8 @@ int main(int argc, char** argv)
 		printf("Could not parse the scene!\n");
 		return -1;
 	}
+	if (scene.settings.numThreads == 0)
+		scene.settings.numThreads = get_processor_count();
 	if (!initGraphics(scene.settings.frameWidth, scene.settings.frameHeight)) return -1;
 	scene.beginRender();
 	Uint32 startTicks = SDL_GetTicks();

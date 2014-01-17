@@ -58,9 +58,10 @@ struct Color {
 	}
 	explicit Color(unsigned rgbcolor) //!< Construct a color from R8G8B8 value like "0xffce08"
 	{
-		b = (rgbcolor & 0xff) / 255.0f;
-		g = ((rgbcolor >> 8) & 0xff) / 255.0f;
-		r = ((rgbcolor >> 16) & 0xff) / 255.0f;
+		const float divider = 1.0f / 255.0f;
+		b = (rgbcolor & 0xff) * divider;
+		g = ((rgbcolor >> 8) & 0xff) * divider;
+		r = ((rgbcolor >> 16) & 0xff) * divider;
 	}
 	/// convert to RGB32, with channel shift specifications. The default values are for
 	/// the blue channel occupying the least-significant byte
@@ -86,7 +87,7 @@ struct Color {
 	/// get the intensity of the color (direct)
 	float intensity(void)
 	{
-		return (r + g + b) / 3;
+		return (r + g + b) * 0.3333333333f;
 	}
 	/// get the perceptual intensity of the color
 	float intensityPerceptual(void)
@@ -110,9 +111,10 @@ struct Color {
 	/// divides the color
 	void operator /= (float divider)
 	{
-		r /= divider;
-		g /= divider;
-		b /= divider;
+		float rdivider = 1.0f / divider;
+		r *= rdivider;
+		g *= rdivider;
+		b *= rdivider;
 	}
 	
 	void adjustSaturation(float amount) // 0 = desaturate; 1 = don't change

@@ -826,6 +826,7 @@ GlobalSettings::GlobalSettings()
 	ambientLight.makeZero();
 	gi = false;
 	numPaths = 40;
+	numThreads = 0;
 }
 
 void GlobalSettings::fillProperties(ParsedBlock& pb)
@@ -840,6 +841,7 @@ void GlobalSettings::fillProperties(ParsedBlock& pb)
 	pb.getDoubleProp("aaThresh", &aaThresh);
 	pb.getBoolProp("gi", &gi);
 	pb.getIntProp("numPaths", &numPaths, 1);
+	pb.getIntProp("numThreads", &numThreads, 0, 64);
 }
 
 SceneElement* DefaultSceneParser::newSceneElement(const char* className)

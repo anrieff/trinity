@@ -8,7 +8,7 @@ GlobalSettings {
 	frameHeight         480
 	maxTraceDepth 8
 	gi 1
-	numPaths 160
+	numPaths 40
 }
 
 Camera camera {

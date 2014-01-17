@@ -136,9 +136,11 @@ bool Mesh::intersectTriangle(const Ray& ray, IntersectionData& data, Triangle& T
 	// are the ray and triangle parallel?
 	if (fabs(Dcr) < 1e-12) return false;
 	
-	double lambda2 = ( ( H ^ AC) * D ) / Dcr;
-	double lambda3 = ( (AB ^  H) * D ) / Dcr;
-	double gamma   = ( (AB ^ AC) * H ) / Dcr;
+	double rDcr = 1/Dcr;
+	
+	double lambda2 = ( ( H ^ AC) * D ) * rDcr;
+	double lambda3 = ( (AB ^  H) * D ) * rDcr;
+	double gamma   = ( (AB ^ AC) * H ) * rDcr;
 
 	// is intersection behind us, or too far?
 	if (gamma < 0 || gamma > data.dist) return false;

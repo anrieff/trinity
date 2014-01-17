@@ -254,6 +254,8 @@ struct GlobalSettings: public SceneElement {
 	
 	bool dbg;                    //!< A debugging flag (if on, various raytracing-related procedures will dump debug info to stdout).
 	
+	int numThreads; //!< rendering threads
+	
 	GlobalSettings();
 	void fillProperties(ParsedBlock& pb);
 	ElementType getElementType() const { return ELEM_SETTINGS; }
