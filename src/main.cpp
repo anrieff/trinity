@@ -140,7 +140,6 @@ Color pathtrace(const Ray& ray, const Color& pathMultiplier, Random& rgen)
 			//
 			float solidAngle = light->solidAngle(w_out.start);
 			Color brdfAtPoint = closestNode->shader->eval(data, ray, w_out);
-			float cosNormVout = max(0.0, dot(data.normal, w_out.dir));
 			
 			lightColor = light->getColor() * solidAngle / (2*PI);
 			
@@ -148,7 +147,7 @@ Color pathtrace(const Ray& ray, const Color& pathMultiplier, Random& rgen)
 			
 			pdf *= 1.0 / scene.lights.size();
 			
-			resultDirect = lightColor * pathMultiplier * brdfAtPoint * cosNormVout / pdf / PI; 
+			resultDirect = lightColor * pathMultiplier * brdfAtPoint / pdf / PI; 
 		}
 	}
 
