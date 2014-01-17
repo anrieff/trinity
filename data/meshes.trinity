@@ -24,7 +24,7 @@ Camera camera {
 	roll          0.0
 	fov           90
 	aspect        1.333
-	stereoSeparation 0.5 // comment this out to disable the stereoscopic effect
+	//stereoSeparation 0.5 // comment this out to disable the stereoscopic effect
 }
 
 /*
