@@ -143,11 +143,12 @@ Color pathtrace(const Ray& ray, const Color& pathMultiplier, Random& rgen)
 			
 			lightColor = light->getColor() * solidAngle / (2*PI);
 			
-			float pdf = solidAngle / (2*PI);
+			float pdfChooseLight = 1.0f / (float) scene.lights.size();
+			float pdfInLight = 1 / (2*PI);
+			float pdfBRDF = 1 / PI;
+			float pdf = pdfChooseLight * pdfInLight * pdfBRDF;
 			
-			pdf *= 1.0 / scene.lights.size();
-			
-			resultDirect = lightColor * pathMultiplier * brdfAtPoint / pdf / PI; 
+			resultDirect = lightColor * pathMultiplier * brdfAtPoint / pdf; 
 		}
 	}
 
