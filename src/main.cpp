@@ -110,6 +110,13 @@ Color pathtrace(const Ray& ray, const Color& pathMultiplier, Random& rgen)
 		}
 	}
 	if (hitLight) {
+		/*
+		 * if the ray actually hit a light, check if we need to pass this light back along the path.
+		 * If the last surface along the path was a diffuse one (Lambert/Phong), we need to discard the
+		 * light contribution, since for diffuse material we do explicit light sampling too, thus the
+		 * light would be over-represented and the image a bit too bright. We may discard light checks
+		 * for secondary rays altogether, but we would lose caustics and light reflections that way.
+		 */
 		if (ray.flags & RF_DIFFUSE)
 			return Color(0, 0, 0);
 		else
@@ -124,43 +131,65 @@ Color pathtrace(const Ray& ray, const Color& pathMultiplier, Random& rgen)
 	
 	Color resultDirect(0, 0, 0);
 	
+	// We continue building the path in two ways:
+	// 1) (a.k.a. "direct illumination"): connect the current path end to a random light.
+	//    This approximates the direct lighting towards the intersection point.
 	if (!scene.lights.empty()) {
+		// choose a random light:
 		int lightIndex = rgen.randint(0, scene.lights.size() - 1);
 		Light* light = scene.lights[lightIndex];
 		int numLightSamples = light->getNumSamples();
+
+		// choose a random sample of that light:
 		int lightSampleIdx = rgen.randint(0, numLightSamples - 1);
+
+		// sample the light and see if it came out nonzero:
 		Vector pointOnLight;
 		Color lightColor;
 		light->getNthSample(lightSampleIdx, data.p, pointOnLight, lightColor);
 		if (lightColor.intensity() > 0 && testVisibility(data.p + data.normal * 1e-6, pointOnLight)) {
+			// w_out - the outgoing ray in the BRDF evaluation
 			Ray w_out;
 			w_out.start = data.p + data.normal * 1e-6;
 			w_out.dir = pointOnLight - w_out.start;
 			w_out.dir.normalize();
 			//
-			float solidAngle = light->solidAngle(w_out.start);
-			Color brdfAtPoint = closestNode->shader->eval(data, ray, w_out);
+			// calculate the light contribution in a manner, consistent with classic path tracing:
+			float solidAngle = light->solidAngle(w_out.start); // solid angle of the light, as seen from x.
+			// evaluate the BRDF:
+			Color brdfAtPoint = closestNode->shader->eval(data, ray, w_out); 
 			
 			lightColor = light->getColor() * solidAngle / (2*PI);
 			
+			// the probability to choose a particular light among all lights: 1/N
 			float pdfChooseLight = 1.0f / (float) scene.lights.size();
+			// the probability to shoot a ray in a random direction: 1/2*pi
 			float pdfInLight = 1 / (2*PI);
+			// the probability to shoot a ray for the BRDF: 1/pi
 			float pdfBRDF = 1 / PI;
+			
+			// combined probability for that ray:
 			float pdf = pdfChooseLight * pdfInLight * pdfBRDF;
 			
-			resultDirect = lightColor * pathMultiplier * brdfAtPoint / pdf; 
+			if (brdfAtPoint.intensity() > 0)
+				// Kajia's rendering equation, evaluated at a single incoming/outgoing directions pair:
+				                /* Li */    /*BRDFs@path*/    /*BRDF*/   /*ray probability*/
+				resultDirect = lightColor * pathMultiplier * brdfAtPoint / pdf; 
 		}
 	}
 
+	// 2) (a.k.a. "indirect illumination"): continue the path randomly, by asking the
+	//    BRDF to choose a continuation direction
 	Ray w_out;
-	Color brdfEval;
-	float pdf;
+	Color brdfEval; // brdf at the chosen direction
+	float pdf; // the probability to choose that specific newRay
+	// sample the BRDF:
 	closestNode->shader->spawnRay(data, ray, w_out, brdfEval, pdf);
 	
-	if (pdf < 0) return Color(1, 0, 0);
-	if (pdf == 0) return Color(0, 0, 0);
+	if (pdf < 0) return Color(1, 0, 0);  // bogus BRDF; mark in red
+	if (pdf == 0) return Color(0, 0, 0);  // terminate the path, as required
 	Color resultGi;
-	resultGi = pathtrace(w_out, pathMultiplier * brdfEval / pdf, rgen);
+	resultGi = pathtrace(w_out, pathMultiplier * brdfEval / pdf, rgen); // continue the path normally; accumulate the new term to the BRDF product
 	
 	return resultDirect + resultGi;
 }

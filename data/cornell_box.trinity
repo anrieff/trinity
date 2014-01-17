@@ -4,6 +4,7 @@ GlobalSettings {
 	frameHeight         640
 	ambientLight        (0.15, 0.15, 0.15)
 	maxTraceDepth 6
+	gi 1
 }
 
 Camera camera {
