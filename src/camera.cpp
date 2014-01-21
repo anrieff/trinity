@@ -100,3 +100,18 @@ Ray Camera::getScreenRay(double x, double y, int camera)
 	result.dir.normalize();
 	return result;
 }
+
+void Camera::move(double dx, double dz)
+{
+	pos += dx * rightDir;
+	pos += dz * frontDir;
+}
+
+void Camera::rotate(double dx, double dz)
+{
+	pitch += dz * 2;
+	if (pitch >  90) pitch = 90;
+	if (pitch < -90) pitch = -90;
+	
+	yaw += dx * 2;
+}

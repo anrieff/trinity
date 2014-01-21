@@ -827,6 +827,7 @@ GlobalSettings::GlobalSettings()
 	gi = false;
 	numPaths = 40;
 	numThreads = 0;
+	interactive = false;
 }
 
 void GlobalSettings::fillProperties(ParsedBlock& pb)
@@ -842,6 +843,7 @@ void GlobalSettings::fillProperties(ParsedBlock& pb)
 	pb.getBoolProp("gi", &gi);
 	pb.getIntProp("numPaths", &numPaths, 1);
 	pb.getIntProp("numThreads", &numThreads, 0, 64);
+	pb.getBoolProp("interactive", &interactive);
 }
 
 SceneElement* DefaultSceneParser::newSceneElement(const char* className)

@@ -76,6 +76,9 @@ public:
 	/// if the camera parameter is present - offset the rays' start to the left or to the right,
 	/// for use in stereoscopic rendering
 	Ray getScreenRay(double x, double y, int camera = CAMERA_CENTER);
+	
+	void move(double dx, double dz);
+	void rotate(double dx, double dz);
 };
 
 #endif // __CAMERA_H__

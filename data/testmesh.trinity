@@ -9,9 +9,10 @@
 
 // 1. First, some global settings
 GlobalSettings {
-	frameWidth          640
-	frameHeight         480
+	frameWidth          320
+	frameHeight         240
 	ambientLight (0.08, 0.08, 0.08)
+	interactive true
 }
 /*
 RectLight l1 {
@@ -39,7 +40,7 @@ Camera camera {
 	fov     75
 	focalPlaneDist 300
 	fNumber 2.0
-	dof     true
+	dof     false
 	numSamples 100
 }
 

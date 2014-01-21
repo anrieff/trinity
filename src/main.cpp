@@ -477,6 +477,36 @@ static bool parseCmdLine(int argc, char** argv)
 	return true;
 }
 
+void mainloop(void)
+{
+	Uint8* keystate;
+	while (1) {
+		renderScene_Threaded();
+		SDL_Event ev;
+		keystate = SDL_GetKeyState(NULL);
+		if (keystate[SDLK_UP])
+			scene.camera->move(0, 10);
+		if (keystate[SDLK_DOWN])
+			scene.camera->move(0, -10);
+		if (keystate[SDLK_LEFT])
+			scene.camera->move(-10, 0);
+		if (keystate[SDLK_RIGHT])
+			scene.camera->move(10, 0);
+		//
+		if (keystate[SDLK_KP2])
+			scene.camera->rotate(0, -1);
+		if (keystate[SDLK_KP8])
+			scene.camera->rotate(0, 1);
+		if (keystate[SDLK_KP4])
+			scene.camera->rotate(-1, 0);
+		if (keystate[SDLK_KP6])
+			scene.camera->rotate(1, 0);
+		if (keystate[SDLK_ESCAPE])
+			return;
+		displayVFB(vfb);
+	}
+}
+
 int main(int argc, char** argv)
 {
 	if (!parseCmdLine(argc, argv)) return 0;
@@ -487,13 +517,20 @@ int main(int argc, char** argv)
 	}
 	if (scene.settings.numThreads == 0)
 		scene.settings.numThreads = get_processor_count();
+	if (scene.settings.interactive) {
+		scene.settings.wantAA = scene.settings.wantPrepass = false;
+	}
 	if (!initGraphics(scene.settings.frameWidth, scene.settings.frameHeight)) return -1;
-	scene.beginRender();
-	Uint32 startTicks = SDL_GetTicks();
-	renderScene_Threaded();
-	float renderTime = (SDL_GetTicks() - startTicks) / 1000.0f;
-	printf("Render time: %.2f seconds.\n", renderTime);
-	setWindowCaption("trinity: rendertime: %.2fs", renderTime);
+	if (scene.settings.interactive) {
+		mainloop();
+	} else {
+		scene.beginRender();
+		Uint32 startTicks = SDL_GetTicks();
+		renderScene_Threaded();
+		float renderTime = (SDL_GetTicks() - startTicks) / 1000.0f;
+		printf("Render time: %.2f seconds.\n", renderTime);
+		setWindowCaption("trinity: rendertime: %.2fs", renderTime);
+	}
 	displayVFB(vfb);
 	waitForUserExit();
 	closeGraphics();
