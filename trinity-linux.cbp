@@ -21,10 +21,12 @@
 				<Option type="0" />
 				<Option compiler="gcc" />
 				<Compiler>
-					<Add option="-O2" />
+					<Add option="-O3" />
+					<Add option="-ffast-math" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
+					<Add option="-ffast-math" />
 				</Linker>
 			</Target>
 		</Build>
