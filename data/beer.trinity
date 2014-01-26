@@ -1,0 +1,132 @@
+//
+// An example scene which renders a beautiful glass of wine and a teapot
+// The wine glass (newwine.obj) is modelled after a real glass I got in my appartment
+//
+// Author: Veselin Georgiev
+//
+
+// 1. First, some global settings
+GlobalSettings {
+	frameWidth          512
+	frameHeight         384
+	ambientLight        (0.25, 0.25, 0.25)
+	//wantAA		    false
+	maxTraceDepth       7
+}
+
+PointLight defLight {
+	pos        (160, 80, 55)
+	color      (1, 1, 1)
+	power	    13000
+}
+
+// 2. A camera
+Camera camera {
+	pos          (97.443, 17.277, 54.581)
+	yaw           350
+	pitch         -0.2
+	roll          0.0
+	fov           80
+	aspect        1.333
+}
+
+Plane floor {
+	y      0
+}
+
+Checker floor_tex {
+	color1 (0, 0, 0)
+	color2 (0.8, 0.8, 0.8)
+	size 32
+}
+
+Lambert floor_shader {
+	texture   floor_tex
+}
+
+Node floorNode {
+	geometry  floor
+	shader    floor_shader
+	translate (115, 0, 96)
+}
+
+Mesh wine_glass {
+	file "geom/newwine.obj"
+}
+
+Mesh wine_fluid {
+	file "geom/fluid.obj"
+}
+
+Mesh teapot {
+	file "geom/teapot_hires.obj"
+}
+
+Reflection refl {
+}
+
+Refraction refr {
+	ior 1.5
+}
+
+Refraction redWine {
+	ior 1.3
+	insideColor (0.5, 0.1, 0.1)
+	absorption 0.07
+}
+
+Refraction teapotRefr {
+	ior 1.6
+	insideColor (0.1, 0.9, 0.1)
+	absorption 0.034
+}
+
+Fresnel fresnel_15 {
+	ior 1.5
+}
+
+Fresnel fresnel_16 {
+	ior 1.6
+}
+
+Layered glass {
+	layer refr (1, 1, 1)
+	layer refl (0, 0, 0) fresnel_15
+}
+
+Layered teapotGlass {
+	layer teapotRefr (1, 1, 1)
+	layer refl (0, 0, 0) fresnel_16
+}
+
+Phong white {
+	color (1, 1, 1)
+}
+
+Node wine_inside_glass {
+	geometry   wine_fluid
+	shader     redWine
+	translate  (115, 0.1, 96)
+	rotate     (0, 0, 0)
+	scale      (26, 26, 26)
+}
+
+Node wine_glass {
+	geometry   wine_glass
+	shader     glass
+	translate  (115, 0.1, 96)
+	rotate     (0, 0, 0)
+	scale      (26, 26, 26)
+}
+
+Node teapot {
+	geometry   teapot
+	shader     teapotGlass
+	translate  (90, 0.1, 95)
+	rotate     (0.5, 0, 0)
+	scale      (8, 8, 8)
+}
+
+CubemapEnvironment environment {
+	folder "env/forest"
+}
