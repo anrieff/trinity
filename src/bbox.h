@@ -34,6 +34,8 @@ struct Triangle {
 	int t[3]; //!< holds indices to the three texture coordinates of the triangle (indexes in the `uvs' array)
 	Vector gnormal; //!< The geometric normal of the mesh (AB ^ AC, normalized)
 	Vector dNdx, dNdy;
+	Vector AB, AC; //!< precomputed vectors B - A and C - A
+	Vector ABcrossAC; //!< precomputed vector AB ^ AC
 	
 	Triangle() {}
 	Triangle(std::string a, std::string b, std::string c);

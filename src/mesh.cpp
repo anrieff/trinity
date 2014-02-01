@@ -110,15 +110,15 @@ bool intersectTriangleFast(const Ray& ray, const Vector& A, const Vector& B, con
 
 bool Mesh::intersectTriangle(const Ray& ray, IntersectionData& data, Triangle& T)
 {
+	// (backface culling needs to be disabled when we trace shadow rays, otherwise we may find light
+	//  in places there shouldn't be one).
 	if (backfaceCulling && !(ray.flags & RF_SHADOW)) {
 		bool inSameDirection = (dot(ray.dir, T.gnormal) > 0);
 		if (inSameDirection) return false; // backface culling
 	}
-	// (backface culling needs to be disabled when we trace shadow rays, otherwise we may find light
-	//  in places there shouldn't be one).
 	//              B                     A
-	Vector AB = vertices[T.v[1]] - vertices[T.v[0]];
-	Vector AC = vertices[T.v[2]] - vertices[T.v[0]];
+//	Vector AB = vertices[T.v[1]] - vertices[T.v[0]];
+//	Vector AC = vertices[T.v[2]] - vertices[T.v[0]];
 	Vector D = -ray.dir;
 	//              0               A
 	Vector H = ray.start - vertices[T.v[0]];
@@ -134,8 +134,7 @@ bool Mesh::intersectTriangle(const Ray& ray, IntersectionData& data, Triangle& T
 	 */
 
 	// Find the determinant of the left part of the equation:
-	Vector ABcrossAC = AB ^ AC;
-	double Dcr = ABcrossAC * D; //(AB ^ AC) * D;
+	double Dcr = T.ABcrossAC * D; //(AB ^ AC) * D;
 	
 	// are the ray and triangle parallel?
 	if (fabs(Dcr) < 1e-12) return false;
@@ -143,12 +142,12 @@ bool Mesh::intersectTriangle(const Ray& ray, IntersectionData& data, Triangle& T
 	double rDcr = 1/Dcr;
 	
 	//double gamma   = ( (AB ^ AC) * H ) * rDcr;
-	double gamma   = ( ABcrossAC * H ) * rDcr;
+	double gamma   = ( T.ABcrossAC * H ) * rDcr;
 	// is intersection behind us, or too far?
 	if (gamma < 0 || gamma > data.dist) return false;
 
-	double lambda2 = ( ( H ^ AC) * D ) * rDcr;
-	double lambda3 = ( (AB ^  H) * D ) * rDcr;
+	double lambda2 = ( ( H ^ T.AC) * D ) * rDcr;
+	double lambda3 = ( (T.AB ^  H) * D ) * rDcr;
 
 	
 	// is the intersection outside the triangle?
@@ -398,6 +397,9 @@ bool Mesh::loadFromOBJ(const char* filename)
 		T.dNdx.normalize();
 		T.dNdy = AB * py + AC * qy;
 		T.dNdy.normalize();
+		T.AB = AB;
+		T.AC = AC;
+		T.ABcrossAC = AB ^ AC;
 	}
 	// create the normals[] array - if needed:
 	if (!hasNormals && autoSmooth) {
