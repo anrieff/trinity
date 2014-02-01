@@ -26,7 +26,7 @@
 using std::vector;
 
 
-bool Plane::intersect(Ray ray, IntersectionData& data)
+bool Plane::intersect(const Ray& ray, IntersectionData& data)
 {
 	// intersect a ray with a XZ plane:
 	// if the ray is pointing to the horizon, or "up", but the plane is below us,
@@ -57,7 +57,7 @@ bool Plane::intersect(Ray ray, IntersectionData& data)
 	}
 }
 
-bool Sphere::intersect(Ray ray, IntersectionData& info)
+bool Sphere::intersect(const Ray& ray, IntersectionData& info)
 {
 	// compute the sphere intersection using a quadratic equation:
 	Vector H = ray.start - center;
@@ -118,7 +118,7 @@ inline bool Cube::intersectCubeSide(const Ray& ray, const Vector& center, Inters
 	return found;
 }
 
-bool Cube::intersect(Ray ray, IntersectionData& data)
+bool Cube::intersect(const Ray& ray, IntersectionData& data)
 {
 	// check for intersection with the negative Y and positive Y sides
 	bool found = intersectCubeSide(ray, center, data);
@@ -157,7 +157,7 @@ void CsgOp::findAllIntersections(Geometry* geom, Ray ray, vector<IntersectionDat
 	}
 }
 
-bool CsgOp::intersect(Ray ray, IntersectionData& data)
+bool CsgOp::intersect(const Ray& ray, IntersectionData& data)
 {
 	vector<IntersectionData> L, R, all;
 	
@@ -197,7 +197,7 @@ bool CsgOp::intersect(Ray ray, IntersectionData& data)
 	return false;
 }
 
-bool CsgDiff::intersect(Ray ray, IntersectionData& data)
+bool CsgDiff::intersect(const Ray& ray, IntersectionData& data)
 {
 	if (!CsgOp::intersect(ray, data)) return false;
 	/*
@@ -215,18 +215,21 @@ bool CsgDiff::intersect(Ray ray, IntersectionData& data)
 }
 
 // intersect a ray with a node, considering the Model transform attached to the node.
-bool Node::intersect(Ray ray, IntersectionData& data)
+bool Node::intersect(const Ray& ray, IntersectionData& data)
 {
 	// world space -> object's canonic space
-	ray.start = transform.undoPoint(ray.start);
-	ray.dir = transform.undoDirection(ray.dir);
+	Ray rayCanonic;
+	rayCanonic.start = transform.undoPoint(ray.start);
+	rayCanonic.dir = transform.undoDirection(ray.dir);
+	rayCanonic.flags = ray.flags;
+	rayCanonic.depth = ray.depth;
 	
 	// save the old "best dist", in case we need to restore it later
 	double oldDist = data.dist; // *(1)
-	double rayDirLength = ray.dir.length();
+	double rayDirLength = rayCanonic.dir.length();
 	data.dist *= rayDirLength;  // (2)
-	ray.dir.normalize();        // (3)
-	if (!geom->intersect(ray, data)) {
+	rayCanonic.dir.normalize();        // (3)
+	if (!geom->intersect(rayCanonic, data)) {
 		data.dist = oldDist;    // (4)
 		return false;
 	}

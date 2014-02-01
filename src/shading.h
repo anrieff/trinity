@@ -41,7 +41,7 @@ public:
 	Shader(const Color& color);
 	virtual ~Shader() {}
 
-	virtual Color shade(Ray ray, const IntersectionData& data) = 0;
+	virtual Color shade(const Ray& ray, const IntersectionData& data) = 0;
 	
 	// from SceneElement:
 	ElementType getElementType() const { return ELEM_SHADER; }
@@ -117,7 +117,7 @@ class Lambert: public Shader {
 public:
 	Lambert(const Color& diffuseColor = Color(1, 1, 1), Texture* texture = NULL):
 		Shader(diffuseColor), texture(texture) {}
-	Color shade(Ray ray, const IntersectionData& data);
+	Color shade(const Ray& ray, const IntersectionData& data);
 	void fillProperties(ParsedBlock& pb)
 	{
 		Shader::fillProperties(pb);
@@ -139,7 +139,7 @@ public:
 	Phong(const Color& diffuseColor = Color(1, 1, 1), double exponent = 16.0, float strength = 1.0f, Texture* texture = NULL):
 		Shader(diffuseColor), texture(texture), exponent(exponent),
 		strength(strength) {}
-	Color shade(Ray ray, const IntersectionData& data);
+	Color shade(const Ray& ray, const IntersectionData& data);
 	void fillProperties(ParsedBlock& pb)
 	{
 		Shader::fillProperties(pb);
@@ -157,7 +157,7 @@ public:
 	Refl(const Color& filter = Color(1, 1, 1), double glossiness = 1.0, 
 		int numSamples = 20):
 		Shader(filter), glossiness(glossiness), numSamples(numSamples) {}
-	Color shade(Ray ray, const IntersectionData& data);
+	Color shade(const Ray& ray, const IntersectionData& data);
 	void fillProperties(ParsedBlock& pb)
 	{
 		Shader::fillProperties(pb);
@@ -174,7 +174,7 @@ class Refr: public Shader {
 	float ior;
 public:
 	Refr(const Color& filter = Color(1, 1, 1), float ior = 1.0f): Shader(filter), ior(ior) {}
-	Color shade(Ray ray, const IntersectionData& data);
+	Color shade(const Ray& ray, const IntersectionData& data);
 	void fillProperties(ParsedBlock& pb)
 	{
 		Shader::fillProperties(pb);
@@ -200,7 +200,7 @@ public:
 	Layered(): Shader(Color(0, 0, 0)) { numLayers = 0; }
 	void addLayer(Shader* shader, const Color& blend, Texture* texture = NULL);
 	
-	Color shade(Ray ray, const IntersectionData& data);
+	Color shade(const Ray& ray, const IntersectionData& data);
 	void fillProperties(ParsedBlock& pb);
 };
 

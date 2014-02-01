@@ -90,7 +90,7 @@ public:
 	Mesh() { faceted = false; backfaceCulling = true; useKDTree = true; autoSmooth = true; }
 	~Mesh();
 	const char* getName();
-	bool intersect(Ray ray, IntersectionData& info);
+	bool intersect(const Ray& ray, IntersectionData& info);
 	bool isInside(const Vector& p) const { return false; } //FIXME!!
 	
 	void setFaceted(bool faceted) { this->faceted = faceted; }

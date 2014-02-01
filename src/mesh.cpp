@@ -228,7 +228,7 @@ bool Mesh::intersectKD(KDTreeNode& node, const BBox& bbox, const RRay& ray, Inte
 	}
 }
 
-bool Mesh::intersect(Ray _ray, IntersectionData& data)
+bool Mesh::intersect(const Ray& _ray, IntersectionData& data)
 {
 	RRay ray(_ray);
 	ray.prepareForTracing();

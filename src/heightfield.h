@@ -47,7 +47,7 @@ class Heightfield: public Geometry {
 public:
 	Heightfield() { heights = NULL; maxH = NULL; normals = NULL; useOptimization = false; }
 	~Heightfield();
-	bool intersect(Ray ray, IntersectionData& info);
+	bool intersect(const Ray& ray, IntersectionData& info);
 	bool isInside(const Vector& p ) const { return false; }
 	void fillProperties(ParsedBlock& pb);
 	const char* getName() { return "Heightfield"; }

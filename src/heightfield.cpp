@@ -56,7 +56,7 @@ Vector Heightfield::getNormal(float x, float y) const
 	return v;
 }
 
-bool Heightfield::intersect(Ray _ray, IntersectionData& info)
+bool Heightfield::intersect(const Ray& _ray, IntersectionData& info)
 {
 	RRay ray(_ray);
 	ray.prepareForTracing();

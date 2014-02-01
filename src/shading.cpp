@@ -63,7 +63,7 @@ Color Checker::getTexColor(const Ray& ray, double u, double v, Vector& normal)
 }
 
 
-Color Lambert::shade(Ray ray, const IntersectionData& data)
+Color Lambert::shade(const Ray& ray, const IntersectionData& data)
 {
 	// turn the normal vector towards us (if needed):
 	Vector N = faceforward(ray.dir, data.normal);
@@ -143,7 +143,7 @@ void Lambert::spawnRay(const IntersectionData& x, const Ray& w_in, Ray& w_out, C
 	pdf = 1 / PI;
 }
 
-Color Phong::shade(Ray ray, const IntersectionData& data)
+Color Phong::shade(const Ray& ray, const IntersectionData& data)
 {
 	// turn the normal vector towards us (if needed):
 	Vector N = faceforward(ray.dir, data.normal);
@@ -210,7 +210,7 @@ Color BitmapTexture::getTexColor(const Ray& ray, double u, double v, Vector& nor
 	return getTexValue(bmp, u, v);
 }
 
-Color Refl::shade(Ray ray, const IntersectionData& data)
+Color Refl::shade(const Ray& ray, const IntersectionData& data)
 {
 	Vector N = faceforward(ray.dir, data.normal);
 	
@@ -292,7 +292,7 @@ void Refl::spawnRay(const IntersectionData& x, const Ray& w_in, Ray& w_out, Colo
 	pdf = 1e16;
 }
 
-Color Refr::shade(Ray ray, const IntersectionData& data)
+Color Refr::shade(const Ray& ray, const IntersectionData& data)
 {
 	Vector N = faceforward(ray.dir, data.normal);
 	
@@ -359,7 +359,7 @@ void Layered::addLayer(Shader* shader, const Color& blend, Texture* texture)
 	numLayers++;
 }
 
-Color Layered::shade(Ray ray, const IntersectionData& data)
+Color Layered::shade(const Ray& ray, const IntersectionData& data)
 {
 	Color result(0, 0, 0);
 	Vector N = data.normal;
