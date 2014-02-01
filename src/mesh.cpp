@@ -84,14 +84,15 @@ bool intersectTriangleFast(const Ray& ray, const Vector& A, const Vector& B, con
 	 */
 
 	// Find the determinant of the left part of the equation:
-	double Dcr = (AB ^ AC) * D;
+	Vector ABcrossAC = AB ^ AC;
+	double Dcr = ABcrossAC * D;
 	
 	// are the ray and triangle parallel?
 	if (fabs(Dcr) < 1e-12) return false;
 	
 	double lambda2 = ( ( H ^ AC) * D ) / Dcr;
 	double lambda3 = ( (AB ^  H) * D ) / Dcr;
-	double gamma   = ( (AB ^ AC) * H ) / Dcr;
+	double gamma   = ( ABcrossAC * H ) / Dcr;
 
 	// is intersection behind us, or too far?
 	if (gamma < 0 || gamma > dist) return false;
@@ -133,7 +134,8 @@ bool Mesh::intersectTriangle(const Ray& ray, IntersectionData& data, Triangle& T
 	 */
 
 	// Find the determinant of the left part of the equation:
-	double Dcr = (AB ^ AC) * D;
+	Vector ABcrossAC = AB ^ AC;
+	double Dcr = ABcrossAC * D; //(AB ^ AC) * D;
 	
 	// are the ray and triangle parallel?
 	if (fabs(Dcr) < 1e-12) return false;
@@ -142,7 +144,8 @@ bool Mesh::intersectTriangle(const Ray& ray, IntersectionData& data, Triangle& T
 	
 	double lambda2 = ( ( H ^ AC) * D ) * rDcr;
 	double lambda3 = ( (AB ^  H) * D ) * rDcr;
-	double gamma   = ( (AB ^ AC) * H ) * rDcr;
+	//double gamma   = ( (AB ^ AC) * H ) * rDcr;
+	double gamma   = ( ABcrossAC * H ) * rDcr;
 
 	// is intersection behind us, or too far?
 	if (gamma < 0 || gamma > data.dist) return false;
