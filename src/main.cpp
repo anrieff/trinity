@@ -333,8 +333,9 @@ public:
 			for (int y = r.y0; y < r.y1; y++)
 				for (int x = r.x0; x < r.x1; x++)
 					renderPixelNoAA(x, y);
-			if (!displayVFBRect(r, vfb))
-				return;
+			if (!scene.settings.interactive)
+				if (!displayVFBRect(r, vfb))
+					return;
 		}
 		
 	}
