@@ -512,7 +512,7 @@ void mainloop(void)
 		displayVFB(vfb);
 	}
 	Uint32 ticks = SDL_GetTicks() - ticksStart;
-	printf("%d frames for %u ms, avg. framerate: %.2f FPS.", framesRendered,
+	printf("%d frames for %u ms, avg. framerate: %.2f FPS.\n", framesRendered,
 		   (unsigned) ticks, framesRendered * 1000.0f / ticks);
 }
 
@@ -520,6 +520,7 @@ int main(int argc, char** argv)
 {
 	if (!parseCmdLine(argc, argv)) return 0;
 	initRandom((Uint32) time(NULL));
+	initColor();
 	if (!scene.parseScene(defaultScene)) {
 		printf("Could not parse the scene!\n");
 		return -1;

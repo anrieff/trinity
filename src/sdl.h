@@ -25,6 +25,7 @@
 #include "constants.h"
 #include <vector>
 
+void initColor(void); //!< sets up a Color->unsigned lookup table, call before everything else!
 void setupConsole(void); //!< setup a text console for printing debug stdout, etc...
 bool initGraphics(int frameWidth, int frameHeight);
 void closeGraphics(void);

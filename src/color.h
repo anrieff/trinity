@@ -42,6 +42,8 @@ inline unsigned convertTo8bit_sRGB(float x)
 	return nearestInt(x * 255.0f);
 }
 
+unsigned convertTo8bit_sRGB_cached(float x);
+
 /// Represents a color, using floatingpoint components in [0..1]
 struct Color {
 	// a union, that allows us to refer to the channels by name (::r, ::g, ::b),
@@ -67,9 +69,9 @@ struct Color {
 	/// the blue channel occupying the least-significant byte
 	unsigned toRGB32(int redShift = 16, int greenShift = 8, int blueShift = 0) const
 	{
-		unsigned ir = convertTo8bit_sRGB(r);
-		unsigned ig = convertTo8bit_sRGB(g);
-		unsigned ib = convertTo8bit_sRGB(b);
+		unsigned ir = convertTo8bit_sRGB_cached(r);
+		unsigned ig = convertTo8bit_sRGB_cached(g);
+		unsigned ib = convertTo8bit_sRGB_cached(b);
 		return (ib << blueShift) | (ig << greenShift) | (ir << redShift);
 	}
 	/// make black
