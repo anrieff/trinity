@@ -38,7 +38,7 @@ Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE]; //!< virtual framebuffer
 bool testVisibility(const Vector& from, const Vector& to);
 
 /// traces a ray in the scene and returns the visible light that comes from that direction
-Color raytrace(Ray ray)
+Color raytrace(const Ray& ray)
 {
 	IntersectionData data;
 	Node* closestNode = NULL;

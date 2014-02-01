@@ -27,7 +27,7 @@
 using std::max;
 
 extern bool testVisibility(const Vector& from, const Vector& to);
-extern Color raytrace(Ray ray);
+extern Color raytrace(const Ray& ray);
 
 Color BRDF::eval(const IntersectionData& x, const Ray& w_in, const Ray& w_out)
 {
