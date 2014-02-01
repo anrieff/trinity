@@ -142,13 +142,14 @@ bool Mesh::intersectTriangle(const Ray& ray, IntersectionData& data, Triangle& T
 	
 	double rDcr = 1/Dcr;
 	
-	double lambda2 = ( ( H ^ AC) * D ) * rDcr;
-	double lambda3 = ( (AB ^  H) * D ) * rDcr;
 	//double gamma   = ( (AB ^ AC) * H ) * rDcr;
 	double gamma   = ( ABcrossAC * H ) * rDcr;
-
 	// is intersection behind us, or too far?
 	if (gamma < 0 || gamma > data.dist) return false;
+
+	double lambda2 = ( ( H ^ AC) * D ) * rDcr;
+	double lambda3 = ( (AB ^  H) * D ) * rDcr;
+
 	
 	// is the intersection outside the triangle?
 	if (lambda2 < 0 || lambda2 > 1 || lambda3 < 0 || lambda3 > 1 || lambda2 + lambda3 > 1)
