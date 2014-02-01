@@ -108,7 +108,7 @@ bool intersectTriangleFast(const Ray& ray, const Vector& A, const Vector& B, con
 }
 
 
-bool Mesh::intersectTriangle(const Ray& ray, IntersectionData& data, Triangle& T)
+bool Mesh::intersectTriangle(const RRay& ray, IntersectionData& data, Triangle& T)
 {
 	// (backface culling needs to be disabled when we trace shadow rays, otherwise we may find light
 	//  in places there shouldn't be one).
@@ -183,7 +183,7 @@ bool Mesh::intersectTriangle(const Ray& ray, IntersectionData& data, Triangle& T
 	return true;
 }
 
-bool Mesh::intersectKD(KDTreeNode& node, const BBox& bbox, const Ray& ray, IntersectionData& data)
+bool Mesh::intersectKD(KDTreeNode& node, const BBox& bbox, const RRay& ray, IntersectionData& data)
 {
 	if (node.axis == AXIS_NONE) {
 		// leaf node; try intersecting with the triangle list:
@@ -228,8 +228,10 @@ bool Mesh::intersectKD(KDTreeNode& node, const BBox& bbox, const Ray& ray, Inter
 	}
 }
 
-bool Mesh::intersect(Ray ray, IntersectionData& data)
+bool Mesh::intersect(Ray _ray, IntersectionData& data)
 {
+	RRay ray(_ray);
+	ray.prepareForTracing();
 	bool found = false;
 	// if the ray doesn't intersect the bounding shpere, it is of no use
 	// to continue: it can't possibly intersect the mesh.

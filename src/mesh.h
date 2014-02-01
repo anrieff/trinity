@@ -71,7 +71,7 @@ class Mesh: public Geometry {
 	
 	// intersect a ray with a single triangle. Return true if an intersection exists, and it's
 	// closer to the minimum distance, stored in data.dist
-	bool intersectTriangle(const Ray& ray, IntersectionData& data, Triangle& T);
+	bool intersectTriangle(const RRay& ray, IntersectionData& data, Triangle& T);
 	void initMesh(void);
 	
 	bool faceted; //!< whether the normals interpolation is disabled or not
@@ -85,7 +85,7 @@ class Mesh: public Geometry {
 	KDTreeNode* kdroot; //!< a pointer to the root of the KDTree. Can be NULL if no tree is built.
 	
 	void build(KDTreeNode& node, const BBox& bbox, const std::vector<int>& triangles, int depth);
-	bool intersectKD(KDTreeNode& node, const BBox& bbox, const Ray& ray, IntersectionData& data);
+	bool intersectKD(KDTreeNode& node, const BBox& bbox, const RRay& ray, IntersectionData& data);
 public:
 	Mesh() { faceted = false; backfaceCulling = true; useKDTree = true; autoSmooth = true; }
 	~Mesh();

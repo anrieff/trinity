@@ -56,8 +56,10 @@ Vector Heightfield::getNormal(float x, float y) const
 	return v;
 }
 
-bool Heightfield::intersect(Ray ray, IntersectionData& info)
+bool Heightfield::intersect(Ray _ray, IntersectionData& info)
 {
+	RRay ray(_ray);
+	ray.prepareForTracing();
 	double dist = bbox.closestIntersection(ray);
 	if (dist >= info.dist) return false;
 	Vector p = ray.start + ray.dir * (dist + 1e-6); // step firmly inside the bbox

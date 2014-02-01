@@ -223,9 +223,11 @@ struct Ray {
 	}
 };
 
-inline Ray project(const Ray& v, int a, int b, int c)
+inline Ray project(Ray v, int a, int b, int c)
 {
-	return Ray(project(v.start, a, b, c), project(v.dir, a, b, c));
+	v.start = project(v.start, a, b, c);
+	v.dir = project(v.dir, a, b, c);
+	return v;
 }
 
 // iostream Vector print routine:
