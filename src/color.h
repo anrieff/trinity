@@ -171,7 +171,8 @@ inline Color operator * (float multiplier, const Color& a)
 /// divides some color
 inline Color operator / (const Color& a, float divider)
 {
-	return Color(a.r / divider, a.g / divider, a.b / divider);
+	float mult = 1.0f / divider;
+	return Color(a.r * mult, a.g * mult, a.b * mult);
 }
 
 #endif // __COLOR_H__
