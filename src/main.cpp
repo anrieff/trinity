@@ -538,9 +538,9 @@ int main(int argc, char** argv)
 		float renderTime = (SDL_GetTicks() - startTicks) / 1000.0f;
 		printf("Render time: %.2f seconds.\n", renderTime);
 		setWindowCaption("trinity: rendertime: %.2fs", renderTime);
+		displayVFB(vfb);
+		waitForUserExit();
 	}
-	displayVFB(vfb);
-	waitForUserExit();
 	closeGraphics();
 	return 0;
 }
