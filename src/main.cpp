@@ -313,8 +313,6 @@ Color renderPixelAA(int x, int y)
 	return vfb[y][x];
 }
 
-ThreadPool pool;
-
 class TaskNoAA: public Parallel
 {
 	const vector<Rect>& buckets;
@@ -388,6 +386,7 @@ void renderScene(void)
 		}
 	}
 
+	static ThreadPool pool;
 	TaskNoAA task1(buckets);
 	pool.run(&task1, scene.settings.numThreads);
 
@@ -485,9 +484,11 @@ void mainloop(void)
 	Uint32 ticksStart = SDL_GetTicks();
 	bool running = true;
 	while (running) {
-		renderScene_Threaded();
+		scene.beginFrame();
+		renderScene();
 		framesRendered++;
 		SDL_Event ev;
+		SDL_PumpEvents();
 		keystate = SDL_GetKeyState(NULL);
 		if (keystate[SDLK_UP])
 			scene.camera->move(0, 10);
@@ -529,10 +530,10 @@ int main(int argc, char** argv)
 		scene.settings.wantAA = scene.settings.wantPrepass = false;
 	}
 	if (!initGraphics(scene.settings.frameWidth, scene.settings.frameHeight)) return -1;
+	scene.beginRender();
 	if (scene.settings.interactive) {
 		mainloop();
 	} else {
-		scene.beginRender();
 		Uint32 startTicks = SDL_GetTicks();
 		renderScene_Threaded();
 		float renderTime = (SDL_GetTicks() - startTicks) / 1000.0f;
