@@ -109,8 +109,10 @@ bool intersectTriangleFast(const Ray& ray, const Vector& A, const Vector& B, con
 
 bool Mesh::intersectTriangle(const Ray& ray, IntersectionData& data, Triangle& T)
 {
-	bool inSameDirection = (dot(ray.dir, T.gnormal) > 0);
-	if (backfaceCulling && inSameDirection && !(ray.flags & RF_SHADOW)) return false; // backface culling
+	if (backfaceCulling && !(ray.flags & RF_SHADOW)) {
+		bool inSameDirection = (dot(ray.dir, T.gnormal) > 0);
+		if (inSameDirection) return false; // backface culling
+	}
 	// (backface culling needs to be disabled when we trace shadow rays, otherwise we may find light
 	//  in places there shouldn't be one).
 	//              B                     A
