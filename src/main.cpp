@@ -480,8 +480,12 @@ static bool parseCmdLine(int argc, char** argv)
 void mainloop(void)
 {
 	Uint8* keystate;
-	while (1) {
+	int framesRendered = 0;
+	Uint32 ticksStart = SDL_GetTicks();
+	bool running = true;
+	while (running) {
 		renderScene_Threaded();
+		framesRendered++;
 		SDL_Event ev;
 		keystate = SDL_GetKeyState(NULL);
 		if (keystate[SDLK_UP])
@@ -502,9 +506,12 @@ void mainloop(void)
 		if (keystate[SDLK_KP6])
 			scene.camera->rotate(1, 0);
 		if (keystate[SDLK_ESCAPE])
-			return;
+			running = false;
 		displayVFB(vfb);
 	}
+	Uint32 ticks = SDL_GetTicks() - ticksStart;
+	printf("%d frames for %u ms, avg. framerate: %.2f FPS.", framesRendered,
+		   (unsigned) ticks, framesRendered * 1000.0f / ticks);
 }
 
 int main(int argc, char** argv)
