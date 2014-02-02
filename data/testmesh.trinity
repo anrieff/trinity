@@ -9,10 +9,13 @@
 
 // 1. First, some global settings
 GlobalSettings {
-	frameWidth          320
-	frameHeight         240
+	frameWidth          640
+	frameHeight         480
 	ambientLight (0.08, 0.08, 0.08)
 	interactive true
+	
+	// if you want to render it interactively, but in a window, use
+	// fullscreen false
 }
 /*
 RectLight l1 {
