@@ -418,7 +418,7 @@ void Layered::fillProperties(ParsedBlock& pb)
 }
 
 // Schlick's approximation
-static float fresnel(const Vector& i, const Vector& n, float ior)
+static inline float fresnel(const Vector& i, const Vector& n, float ior)
 {
 	float f = sqr((1.0f - ior) / (1.0f + ior));
 	float NdotI = (float) -dot(n, i);
