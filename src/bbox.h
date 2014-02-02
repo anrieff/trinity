@@ -153,7 +153,7 @@ struct BBox {
 		for (int dim = 0; dim < 3; dim++) {
 			if ((ray.dir[dim] < 0 && ray.start[dim] < vmin[dim]) || (ray.dir[dim] > 0 && ray.start[dim] > vmax[dim])) continue;
 			if (fabs(ray.dir[dim]) < 1e-9) continue;
-			double mul = ray.dir[dim];
+			double mul = ray.rdir[dim];
 			double xs[2] = { vmin[dim], vmax[dim] };
 			int u = (dim == 0) ? 1 : 0;
 			int v = (dim == 2) ? 1 : 2;
