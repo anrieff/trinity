@@ -477,40 +477,90 @@ static bool parseCmdLine(int argc, char** argv)
 	return true;
 }
 
+// handles the keyboard and mouse events in interactive mode
+// the `dt' param is the last frame render time, in seconds.
+void handleKbdMouse(bool& running, double dt)
+{
+	if (!running) return;
+	static bool fastMotion = false;
+	SDL_Event ev;
+	// handle key presses
+	while (SDL_PollEvent(&ev)) {
+		switch (ev.type) {
+			case SDL_QUIT:
+				running = false;
+				return;
+			case SDL_KEYDOWN:
+			{
+				switch (ev.key.keysym.sym) {
+					case SDLK_ESCAPE:
+						running = false;
+						return;
+					case 'p':
+					{
+						// an utility function, that tells us where the camera is.
+						printf("Camera position: (%.3lf, %.3lf, %.3lf)\n", scene.camera->pos.x, scene.camera->pos.y, scene.camera->pos.z);
+						printf("   yaw: %.3lf\n", scene.camera->yaw);
+						printf(" pitch: %.3lf\n", scene.camera->pitch);
+						printf("  roll: %.3lf\n", scene.camera->roll);
+						break;
+					}
+					case 'r':
+					{
+						// activate/deactivate running (camera movement is 4x faster when running)
+						fastMotion = !fastMotion;
+						break;
+					}
+					default:
+						break;
+				}
+				break;
+			}
+		}
+	}
+	const double KEYBOARD_SENSITIVITY = 5.0;
+	const double MOUSE_SENSITIVITY = 0.05;
+	Uint8 *keystate;
+	int deltax, deltay;
+	// fetch currently pressed keys:
+	keystate = SDL_GetKeyState(NULL);
+	double M = dt * (fastMotion ? 200 : 50);
+	double R = dt * KEYBOARD_SENSITIVITY;
+	// handle arrow keys (camera movement)
+	if (keystate[SDLK_UP	]) scene.camera->move(0, +M);
+	if (keystate[SDLK_DOWN	]) scene.camera->move(0, -M);
+	if (keystate[SDLK_LEFT	]) scene.camera->move(-M, 0);
+	if (keystate[SDLK_RIGHT	]) scene.camera->move(+M, 0);
+	// handle keypad keys (camera lookaround)
+	if (keystate[SDLK_KP2	]) scene.camera->rotate(0, -R);
+	if (keystate[SDLK_KP4	]) scene.camera->rotate(+R, 0);
+	if (keystate[SDLK_KP6	]) scene.camera->rotate(-R, 0);
+	if (keystate[SDLK_KP8	]) scene.camera->rotate(0, +R);
+	
+	// handle mouse movement (camera lookaround)
+	SDL_GetRelativeMouseState(&deltax, &deltay);
+	scene.camera->rotate(-MOUSE_SENSITIVITY * deltax, -MOUSE_SENSITIVITY * deltay);
+}
+
+// a "main loop", that runs the interactive mode
 void mainloop(void)
 {
-	Uint8* keystate;
+	if (scene.settings.fullscreen) SDL_ShowCursor(0); // hide the cursor in fullscreen mode
 	int framesRendered = 0;
 	Uint32 ticksStart = SDL_GetTicks();
 	bool running = true;
 	while (running) {
+		Uint32 frameTicks = SDL_GetTicks(); // record how much time the frame took
 		scene.beginFrame();
-		renderScene();
+		renderScene();   // render
 		framesRendered++;
-		SDL_Event ev;
-		SDL_PumpEvents();
-		keystate = SDL_GetKeyState(NULL);
-		if (keystate[SDLK_UP])
-			scene.camera->move(0, 10);
-		if (keystate[SDLK_DOWN])
-			scene.camera->move(0, -10);
-		if (keystate[SDLK_LEFT])
-			scene.camera->move(-10, 0);
-		if (keystate[SDLK_RIGHT])
-			scene.camera->move(10, 0);
-		//
-		if (keystate[SDLK_KP2])
-			scene.camera->rotate(0, -1);
-		if (keystate[SDLK_KP8])
-			scene.camera->rotate(0, 1);
-		if (keystate[SDLK_KP4])
-			scene.camera->rotate(-1, 0);
-		if (keystate[SDLK_KP6])
-			scene.camera->rotate(1, 0);
-		if (keystate[SDLK_ESCAPE])
-			running = false;
-		displayVFB(vfb);
+		displayVFB(vfb); // display to user
+		// determine how much time we spent in rendering...
+		double renderTime = (SDL_GetTicks() - frameTicks) / 1000.0;
+		// ... and use it when calculating camera movements, etc.
+		handleKbdMouse(running, renderTime);
 	}
+	// calculate average FPS
 	Uint32 ticks = SDL_GetTicks() - ticksStart;
 	printf("%d frames for %u ms, avg. framerate: %.2f FPS.\n", framesRendered,
 		   (unsigned) ticks, framesRendered * 1000.0f / ticks);

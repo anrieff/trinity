@@ -109,9 +109,9 @@ void Camera::move(double dx, double dz)
 
 void Camera::rotate(double dx, double dz)
 {
-	pitch += dz * 2;
+	pitch += dz;
 	if (pitch >  90) pitch = 90;
 	if (pitch < -90) pitch = -90;
 	
-	yaw += dx * 2;
+	yaw += dx;
 }
