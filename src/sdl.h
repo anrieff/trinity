@@ -27,7 +27,7 @@
 
 void initColor(void); //!< sets up a Color->unsigned lookup table, call before everything else!
 void setupConsole(void); //!< setup a text console for printing debug stdout, etc...
-bool initGraphics(int frameWidth, int frameHeight);
+bool initGraphics(int frameWidth, int frameHeight, bool fullscreen);
 void closeGraphics(void);
 void displayVFB(Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE]); //!< displays the VFB (Virtual framebuffer) to the real one.
 void waitForUserExit(void); //!< Pause. Wait until the user closes the application

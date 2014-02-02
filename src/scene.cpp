@@ -828,6 +828,7 @@ GlobalSettings::GlobalSettings()
 	numPaths = 40;
 	numThreads = 0;
 	interactive = false;
+	fullscreen = true;
 }
 
 void GlobalSettings::fillProperties(ParsedBlock& pb)
@@ -844,6 +845,7 @@ void GlobalSettings::fillProperties(ParsedBlock& pb)
 	pb.getIntProp("numPaths", &numPaths, 1);
 	pb.getIntProp("numThreads", &numThreads, 0, 64);
 	pb.getBoolProp("interactive", &interactive);
+	pb.getBoolProp("fullscreen", &fullscreen);
 }
 
 SceneElement* DefaultSceneParser::newSceneElement(const char* className)

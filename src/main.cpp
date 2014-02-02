@@ -527,10 +527,11 @@ int main(int argc, char** argv)
 	}
 	if (scene.settings.numThreads == 0)
 		scene.settings.numThreads = get_processor_count();
-	if (scene.settings.interactive) {
+	if (scene.settings.interactive) 
 		scene.settings.wantAA = scene.settings.wantPrepass = false;
-	}
-	if (!initGraphics(scene.settings.frameWidth, scene.settings.frameHeight)) return -1;
+	bool fullscreen = scene.settings.interactive && scene.settings.fullscreen;
+	
+	if (!initGraphics(scene.settings.frameWidth, scene.settings.frameHeight, fullscreen)) return -1;
 	scene.beginRender();
 	if (scene.settings.interactive) {
 		mainloop();

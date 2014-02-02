@@ -47,13 +47,13 @@ void setupConsole(void)
 }
 
 /// try to create a frame window with the given dimensions
-bool initGraphics(int frameWidth, int frameHeight)
+bool initGraphics(int frameWidth, int frameHeight, bool fullscreen)
 {
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		printf("Cannot initialize SDL: %s\n", SDL_GetError());
 		return false;
 	}
-	screen = SDL_SetVideoMode(frameWidth, frameHeight, 32, 0);
+	screen = SDL_SetVideoMode(frameWidth, frameHeight, 32, fullscreen ? SDL_FULLSCREEN : 0);
 	if (!screen) {
 		printf("Cannot set video mode %dx%d - %s\n", frameWidth, frameHeight, SDL_GetError());
 		return false;

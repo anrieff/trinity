@@ -254,8 +254,9 @@ struct GlobalSettings: public SceneElement {
 	
 	bool dbg;                    //!< A debugging flag (if on, various raytracing-related procedures will dump debug info to stdout).
 	
-	int numThreads; //!< rendering threads
-	bool interactive;
+	int numThreads;              //!< # rendering threads (0 to autodetect)
+	bool interactive;            //!< interactive mode
+	bool fullscreen;             //!< fullscreen in interactive mode (default: true)
 	
 	GlobalSettings();
 	void fillProperties(ParsedBlock& pb);
