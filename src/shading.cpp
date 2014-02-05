@@ -114,7 +114,7 @@ Vector hemisphereSample(const Vector& normal)
 	double v = rgen.randdouble();
 	
 	double theta = 2 * PI * u;
-	double phi = acos(2 * v  -1);
+	double phi = acos(2 * v - 1) - PI/2;
 	
 	Vector res(
 		cos(theta) * cos(phi),
