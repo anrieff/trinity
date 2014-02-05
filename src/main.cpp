@@ -166,11 +166,9 @@ Color pathtrace(const Ray& ray, const Color& pathMultiplier, Random& rgen)
 			float pdfChooseLight = 1.0f / (float) scene.lights.size();
 			// the probability to shoot a ray in a random direction: 1/2*pi
 			float pdfInLight = 1 / (2*PI);
-			// the probability to shoot a ray for the BRDF: 1/pi
-			float pdfBRDF = 1 / PI;
 			
 			// combined probability for that ray:
-			float pdf = pdfChooseLight * pdfInLight * pdfBRDF;
+			float pdf = pdfChooseLight * pdfInLight;
 			
 			if (brdfAtPoint.intensity() > 0)
 				// Kajia's rendering equation, evaluated at a single incoming/outgoing directions pair:

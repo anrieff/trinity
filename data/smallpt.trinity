@@ -25,7 +25,7 @@ RectLight l1 {
 	translate  (50, 81.33, 81.6)
 	rotate     (0, 0, 0)
 	color	   (1, 1, 1)
-	power	   6
+	power	   12
 	scale (34, 34, 34)
 	xSubd  6
 	ySubd  6

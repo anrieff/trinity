@@ -140,7 +140,7 @@ void Lambert::spawnRay(const IntersectionData& x, const Ray& w_in, Ray& w_out, C
 	w_out.dir = hemisphereSample(N);
 	w_out.flags = w_out.flags | RF_DIFFUSE;
 	colorEval = diffuseColor * (1 / PI) * max(0.0, dot(w_out.dir, N));
-	pdf = 1 / PI;
+	pdf = 1 / (2 * PI);
 }
 
 Color Phong::shade(const Ray& ray, const IntersectionData& data)
