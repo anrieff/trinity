@@ -52,14 +52,17 @@ Node floorNode {
 
 Mesh wine_glass {
 	file "geom/newwine.obj"
+	backfaceCulling false
 }
 
 Mesh wine_fluid {
 	file "geom/fluid.obj"
+	backfaceCulling false
 }
 
 Mesh teapot {
 	file "geom/teapot_hires.obj"
+	backfaceCulling false
 }
 
 Reflection refl {
