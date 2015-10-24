@@ -96,9 +96,10 @@ public:
 };
 
 class Sphere: public Geometry {
+public:
 	Vector center;
 	double R;
-public:
+	
 	Sphere(const Vector& center = Vector(0, 0, 0), double R = 1): center(center), R(R) {}
 	
 	void fillProperties(ParsedBlock& pb)

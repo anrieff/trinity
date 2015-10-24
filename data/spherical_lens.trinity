@@ -6,6 +6,8 @@ GlobalSettings {
 	frameHeight         600
 	ambientLight        (0.28, 0.30, 0.35)
 	maxTraceDepth		5
+	interactive			true
+	fullscreen			false
 }
 
 PointLight {
@@ -27,10 +29,10 @@ SphericalLensCamera camera {
 	dof		on
 	
 	fNumber 2.2
-	lensDist 2.5
-	convexity 0.28
-	sensorScaling 4.0
-	numSamples 32
+	lensDist 2
+	convexity 0.40
+	sensorScaling 3.0
+	numSamples 1
 
 	//stereoSeparation 0.5 // comment this out to disable the stereoscopic effect
 }

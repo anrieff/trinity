@@ -30,6 +30,11 @@ enum {
 	CAMERA_RIGHT,
 };
 
+enum {
+	CAMERA_NORMAL,
+	CAMERA_SPHERICAL_LENS,
+};
+
 class Camera: public SceneElement {
 	// these internal vectors describe three of the ends of the imaginary
 	// ray shooting screen
@@ -78,6 +83,8 @@ public:
 	/// for use in stereoscopic rendering
 	virtual Ray getScreenRay(double x, double y, int camera = CAMERA_CENTER);
 	
+	virtual int getCameraType() const { return CAMERA_NORMAL; }
+	
 	void move(double dx, double dz);
 	void rotate(double dx, double dz);
 };
@@ -92,6 +99,9 @@ class SphericalLensCamera: public Camera {
 public:
 	double convexity; // the convexity of the lens; the ratio of the optical axis to the lens diameter; should be always less than 1, and usually around 0.1 or less
 	double lensDist; // lens-to-sensor distance
+	double abbeNum;
+
+
 	double sensorScaling; // scaling factor for the sensor. The sensor's height will be 1 by default, but this factor can change that.
 	
 	SphericalLensCamera();
@@ -99,6 +109,13 @@ public:
 	void beginFrame();
 	void fillProperties(ParsedBlock& pb);
 	Ray getScreenRay(double x, double y, int camera);
+	virtual int getCameraType() const { return CAMERA_SPHERICAL_LENS; }
+	//
+	void moveLens(double delta);
+	void multiplyAperture(double aperture);
+	void multiplySensorSize(double mult);
+	void addAbbe(double amount);
+	//
 };
 
 #endif // __CAMERA_H__

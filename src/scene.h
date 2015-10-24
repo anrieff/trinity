@@ -257,6 +257,7 @@ struct GlobalSettings: public SceneElement {
 	int numThreads;              //!< # rendering threads (0 to autodetect)
 	bool interactive;            //!< interactive mode
 	bool fullscreen;             //!< fullscreen in interactive mode (default: true)
+	bool lensInteractive;        //!< use interactive mode to control a spherical lens camera
 	
 	GlobalSettings();
 	void fillProperties(ParsedBlock& pb);

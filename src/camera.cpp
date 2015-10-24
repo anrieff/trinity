@@ -121,16 +121,21 @@ void Camera::rotate(double dx, double dz)
 /**
  * @class SphericalLensCamera
  */
+ 
+class SphericalLensCamera;
 
 class Lens {
 	Sphere s1, s2;
 	CsgInter geom;
 public:
+	
+	friend class SphericalLensCamera;
 	void construct(double lensDist, double convexity)
 	{
 		double r = (1 + convexity*convexity) / (2 * convexity);
 		double lensPos1 = lensDist - (r - convexity);
 		double lensPos2 = lensDist + (r - convexity);
+		// rays intersect s2 first, and s1 second (on the outside)
 		s1 = Sphere(Vector(0, 0, lensPos1), r);
 		s2 = Sphere(Vector(0, 0, lensPos2), r);
 		geom = CsgInter(&s1, &s2);
@@ -141,14 +146,16 @@ public:
 		const double invIOR_crown = 1.0 / IOR_crown;
 		IntersectionData info;
 		info.dist = 1e99;
-		if (!geom.intersect(inRay, info)) return false;
+		if (!s2.intersect(inRay, info)) return false;
+//		if (!geom.intersect(inRay, info)) return false;
 		Ray midRay;
 		//Vector z = Vector(-0.41711363380418204, 0.37625948485441257, 0.82731192216222948);
 		midRay.dir = refract(inRay.dir, info.normal, invIOR_crown);
 		midRay.dir.normalize();
 		midRay.start = info.p + midRay.dir * 1e-6;
 		info.dist = 1e99;
-		if (!geom.intersect(midRay, info)) return false;
+//		if (!geom.intersect(midRay, info)) return false;
+		if (!s1.intersect(midRay, info)) return false;
 		outRay.start = info.p;
 		outRay.dir = refract(midRay.dir, faceforward(info.normal, midRay.dir), IOR_crown);
 		if (outRay.dir.lengthSqr() == 0) return false;
@@ -162,6 +169,7 @@ SphericalLensCamera::SphericalLensCamera()
 	convexity = 0.1;
 	lensDist = 1.0;
 	sensorScaling = 1.0;
+	abbeNum = 0;
 	lens = NULL;
 }
 
@@ -205,4 +213,30 @@ Ray SphericalLensCamera::getScreenRay(double x, double y, int camera)
 		input.dir.normalize();
 	} while (!lens->traceRay(input, result));
 	return T.ray(result);
+}
+
+void SphericalLensCamera::moveLens(double delta)
+{
+	lensDist += delta;
+	lens->s1.center.z += delta;
+	lens->s2.center.z += delta;
+}
+
+void SphericalLensCamera::multiplyAperture(double multiplier)
+{
+	fNumber *= multiplier;
+}
+
+void SphericalLensCamera::multiplySensorSize(double mult)
+{
+	sensorScaling *= mult;
+	sensorTopLeft = Vector(aspect, -1.0, 0.0) * 0.5 * sensorScaling;
+	sensorDx = -aspect / frameWidth() * sensorScaling;
+	sensorDy = 1.0 / frameHeight() * sensorScaling;
+}
+
+void SphericalLensCamera::addAbbe(double amount)
+{
+	abbeNum += amount;
+	if (abbeNum < 0) abbeNum = 0;
 }

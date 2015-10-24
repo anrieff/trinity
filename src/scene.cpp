@@ -829,6 +829,7 @@ GlobalSettings::GlobalSettings()
 	numThreads = 0;
 	interactive = false;
 	fullscreen = true;
+	lensInteractive = false;
 }
 
 void GlobalSettings::fillProperties(ParsedBlock& pb)

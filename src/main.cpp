@@ -34,8 +34,24 @@
 #include "cxxptl_sdl.h"
 using namespace std;
 
+struct Accum {
+	Color sum;
+	int count;
+	void reset(void) { sum.makeZero(); count = 0; }
+	inline operator Color () { return sum / count; }
+};
+
+Accum svfb[VFB_MAX_SIZE][VFB_MAX_SIZE];
+
 Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE]; //!< virtual framebuffer
 bool testVisibility(const Vector& from, const Vector& to);
+
+void resetAccum(void)
+{
+	for (int y = 0; y < frameHeight(); y++)
+		for (int x = 0; x < frameWidth(); x++)
+			svfb[y][x].reset();
+}
 
 /// traces a ray in the scene and returns the visible light that comes from that direction
 Color raytrace(const Ray& ray)
@@ -287,7 +303,13 @@ Color renderSample(double x, double y, int dx = 1, int dy = 1)
 // gets the color for a single pixel, without antialiasing
 Color renderPixelNoAA(int x, int y, int dx = 1, int dy = 1)
 {
-	vfb[y][x] = renderSample(x, y, dx, dy);
+	if (!scene.settings.lensInteractive) {
+		vfb[y][x] = renderSample(x, y, dx, dy);
+	} else {
+		svfb[y][x].sum += renderSample(x, y, dx, dy);
+		svfb[y][x].count++;
+		vfb[y][x] = svfb[y][x];
+	}
 	return vfb[y][x];
 }
 
@@ -482,6 +504,9 @@ void handleKbdMouse(bool& running, double dt)
 	if (!running) return;
 	static bool fastMotion = false;
 	SDL_Event ev;
+	SphericalLensCamera* lensCamera = NULL;
+	if (scene.settings.lensInteractive)
+		lensCamera = (SphericalLensCamera*) scene.camera;
 	// handle key presses
 	while (SDL_PollEvent(&ev)) {
 		switch (ev.type) {
@@ -509,6 +534,26 @@ void handleKbdMouse(bool& running, double dt)
 						fastMotion = !fastMotion;
 						break;
 					}
+					case SDLK_KP_PLUS:
+					case SDLK_KP_MINUS:
+						resetAccum();
+						lensCamera->moveLens(ev.key.keysym.sym == SDLK_KP_PLUS ? 0.05 : -0.05);
+						break;
+					case SDLK_KP_MULTIPLY:
+					case SDLK_KP_DIVIDE:
+						resetAccum();
+						lensCamera->multiplyAperture(ev.key.keysym.sym == SDLK_KP_MULTIPLY ? 1.15 : 1/1.15);
+						break;
+					case '.':
+					case ',':
+						resetAccum();
+						lensCamera->multiplySensorSize(ev.key.keysym.sym == '.' ? 1.15 : 1/1.15);
+						break;
+					case 'a':
+					case 'b':
+						resetAccum();
+						lensCamera->addAbbe(ev.key.keysym.sym == 'a' ? 0.01 : -0.01);
+						break;
 					default:
 						break;
 				}
@@ -516,7 +561,7 @@ void handleKbdMouse(bool& running, double dt)
 			}
 		}
 	}
-	const double KEYBOARD_SENSITIVITY = 5.0;
+	const double KEYBOARD_SENSITIVITY = 25.0;
 	const double MOUSE_SENSITIVITY = 0.05;
 	Uint8 *keystate;
 	int deltax, deltay;
@@ -534,15 +579,22 @@ void handleKbdMouse(bool& running, double dt)
 	if (keystate[SDLK_KP4	]) scene.camera->rotate(+R, 0);
 	if (keystate[SDLK_KP6	]) scene.camera->rotate(-R, 0);
 	if (keystate[SDLK_KP8	]) scene.camera->rotate(0, +R);
-	
+	for (auto i: {SDLK_UP, SDLK_DOWN, SDLK_LEFT, SDLK_RIGHT, SDLK_KP2, SDLK_KP4, SDLK_KP6, SDLK_KP8})
+		if (keystate[i]) {
+			resetAccum();
+			break;
+		}
 	// handle mouse movement (camera lookaround)
-	SDL_GetRelativeMouseState(&deltax, &deltay);
-	scene.camera->rotate(-MOUSE_SENSITIVITY * deltax, -MOUSE_SENSITIVITY * deltay);
+	if (!scene.settings.lensInteractive) {
+		SDL_GetRelativeMouseState(&deltax, &deltay);
+		scene.camera->rotate(-MOUSE_SENSITIVITY * deltax, -MOUSE_SENSITIVITY * deltay);
+	}
 }
 
 // a "main loop", that runs the interactive mode
 void mainloop(void)
 {
+	if (scene.camera->getCameraType() == CAMERA_SPHERICAL_LENS) scene.settings.lensInteractive = true;
 	if (scene.settings.fullscreen) SDL_ShowCursor(0); // hide the cursor in fullscreen mode
 	int framesRendered = 0;
 	Uint32 ticksStart = SDL_GetTicks();
