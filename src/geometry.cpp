@@ -176,6 +176,7 @@ bool CsgOp::intersect(const Ray& ray, IntersectionData& data)
 	bool inL, inR;
 	inL = L.size() % 2 == 1;
 	inR = R.size() % 2 == 1;
+	bool currentState = boolOp(inL, inR);
 	
 	for (int i = 0; i < (int) all.size(); i++) {
 		IntersectionData& current = all[i];
@@ -188,7 +189,7 @@ bool CsgOp::intersect(const Ray& ray, IntersectionData& data)
 		
 		// if we entered the CSG just now, and this optimizes the current data.dist ->
 		// then we've found the intersection.
-		if (boolOp(inL, inR)) {
+		if (boolOp(inL, inR) != currentState) {
 			if (current.dist > data.dist) return false;
 			data = current;
 			return true;
