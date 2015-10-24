@@ -22,6 +22,7 @@
 
 #include "vector.h"
 #include "scene.h"
+#include "transform.h"
 
 enum {
 	CAMERA_CENTER,
@@ -75,10 +76,29 @@ public:
 	/// generates a screen ray through a pixel (x, y - screen coordinates, not necessarily integer).
 	/// if the camera parameter is present - offset the rays' start to the left or to the right,
 	/// for use in stereoscopic rendering
-	Ray getScreenRay(double x, double y, int camera = CAMERA_CENTER);
+	virtual Ray getScreenRay(double x, double y, int camera = CAMERA_CENTER);
 	
 	void move(double dx, double dz);
 	void rotate(double dx, double dz);
+};
+
+
+class Lens;
+class SphericalLensCamera: public Camera {
+	Transform T;
+	Lens* lens;
+	Vector sensorTopLeft;
+	double sensorDx, sensorDy;
+public:
+	double convexity; // the convexity of the lens; the ratio of the optical axis to the lens diameter; should be always less than 1, and usually around 0.1 or less
+	double lensDist; // lens-to-sensor distance
+	double sensorScaling; // scaling factor for the sensor. The sensor's height will be 1 by default, but this factor can change that.
+	
+	SphericalLensCamera();
+	~SphericalLensCamera();
+	void beginFrame();
+	void fillProperties(ParsedBlock& pb);
+	Ray getScreenRay(double x, double y, int camera);
 };
 
 #endif // __CAMERA_H__

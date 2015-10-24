@@ -23,6 +23,7 @@
 #include "util.h"
 #include "sdl.h"
 #include "random_generator.h"
+#include "geometry.h"
 
 void Camera::beginFrame(void)
 {
@@ -114,4 +115,94 @@ void Camera::rotate(double dx, double dz)
 	if (pitch < -90) pitch = -90;
 	
 	yaw += dx;
+}
+
+
+/**
+ * @class SphericalLensCamera
+ */
+
+class Lens {
+	Sphere s1, s2;
+	CsgInter geom;
+public:
+	void construct(double lensDist, double convexity)
+	{
+		double r = (1 + convexity*convexity) / (2 * convexity);
+		double lensPos1 = lensDist - (r - convexity);
+		double lensPos2 = lensDist + (r - convexity);
+		s1 = Sphere(Vector(0, 0, lensPos1), r);
+		s2 = Sphere(Vector(0, 0, lensPos2), r);
+		geom = CsgInter(&s1, &s2);
+	}
+	bool traceRay(const Ray& inRay, Ray& outRay)
+	{
+		const double IOR_crown = 1.52; // a typical IOR for a crown glass
+		const double invIOR_crown = 1.0 / IOR_crown;
+		IntersectionData info;
+		info.dist = 1e99;
+		if (!geom.intersect(inRay, info)) return false;
+		Ray midRay;
+		//Vector z = Vector(-0.41711363380418204, 0.37625948485441257, 0.82731192216222948);
+		midRay.dir = refract(inRay.dir, info.normal, invIOR_crown);
+		midRay.dir.normalize();
+		midRay.start = info.p + midRay.dir * 1e-6;
+		info.dist = 1e99;
+		if (!geom.intersect(midRay, info)) return false;
+		outRay.start = info.p;
+		outRay.dir = refract(midRay.dir, faceforward(info.normal, midRay.dir), IOR_crown);
+		if (outRay.dir.lengthSqr() == 0) return false;
+		outRay.dir.normalize();
+		return true;
+	}
+};
+
+SphericalLensCamera::SphericalLensCamera()
+{
+	convexity = 0.1;
+	lensDist = 1.0;
+	sensorScaling = 1.0;
+	lens = NULL;
+}
+
+SphericalLensCamera::~SphericalLensCamera()
+{
+	if (lens) delete lens;
+}
+
+void SphericalLensCamera::fillProperties(ParsedBlock& block)
+{
+	Camera::fillProperties(block);
+	block.getDoubleProp("convexity", &convexity);
+	block.getDoubleProp("lensDist", &lensDist);
+	block.getDoubleProp("sensorScaling", &sensorScaling);
+}
+
+void SphericalLensCamera::beginFrame()
+{
+	Camera::beginFrame();
+	sensorTopLeft = Vector(aspect, -1.0, 0.0) * 0.5 * sensorScaling;
+	sensorDx = -aspect / frameWidth() * sensorScaling;
+	sensorDy = 1.0 / frameHeight() * sensorScaling;
+	T.reset();
+	T.rotate(yaw, pitch, roll);
+	T.translate(pos);
+	if (!lens) lens = new Lens;
+	lens->construct(lensDist, convexity);
+}
+
+Ray SphericalLensCamera::getScreenRay(double x, double y, int camera)
+{
+	Ray result;
+	Ray input;
+	input.start = sensorTopLeft + Vector(x * sensorDx, y * sensorDy, 0);
+	Random& r = getRandomGen(-1);
+	do {
+		double x, y;
+		r.unitDiscSample(x, y);
+		Vector lensPoint(x / fNumber, y / fNumber, lensDist - convexity);
+		input.dir = lensPoint - input.start;
+		input.dir.normalize();
+	} while (!lens->traceRay(input, result));
+	return T.ray(result);
 }
