@@ -25,6 +25,8 @@
 #include "random_generator.h"
 #include "geometry.h"
 
+bool dispersionOn = false;
+
 void Camera::beginFrame(void)
 {
 	double x = -aspect;
@@ -140,10 +142,11 @@ public:
 		s2 = Sphere(Vector(0, 0, lensPos2), r);
 		geom = CsgInter(&s1, &s2);
 	}
-	bool traceRay(const Ray& inRay, Ray& outRay)
+	bool traceRay(const Ray& inRay, Ray& outRay, double abbeNum)
 	{
-		const double IOR_crown = 1.52; // a typical IOR for a crown glass
-		const double invIOR_crown = 1.0 / IOR_crown;
+		double IOR_crown = 1.52; // a typical IOR for a crown glass
+		IOR_crown += (555 - inRay.wavelength) / 100.0 * abbeNum;
+		double invIOR_crown = 1.0 / IOR_crown;
 		IntersectionData info;
 		info.dist = 1e99;
 		if (!s2.intersect(inRay, info)) return false;
@@ -160,6 +163,7 @@ public:
 		outRay.dir = refract(midRay.dir, faceforward(info.normal, midRay.dir), IOR_crown);
 		if (outRay.dir.lengthSqr() == 0) return false;
 		outRay.dir.normalize();
+		outRay.wavelength = inRay.wavelength;
 		return true;
 	}
 };
@@ -211,7 +215,10 @@ Ray SphericalLensCamera::getScreenRay(double x, double y, int camera)
 		Vector lensPoint(x / fNumber, y / fNumber, lensDist - convexity);
 		input.dir = lensPoint - input.start;
 		input.dir.normalize();
-	} while (!lens->traceRay(input, result));
+		input.wavelength = 555;
+		if (abbeNum > 0)
+			input.wavelength = r.randfloat() * (780 - 380) + 380;
+	} while (!lens->traceRay(input, result, abbeNum));
 	return T.ray(result);
 }
 
@@ -239,4 +246,5 @@ void SphericalLensCamera::addAbbe(double amount)
 {
 	abbeNum += amount;
 	if (abbeNum < 0) abbeNum = 0;
+	dispersionOn = abbeNum > 0;
 }

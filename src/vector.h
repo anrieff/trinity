@@ -211,6 +211,7 @@ struct Ray {
 	Vector start, dir;
 	int flags;
 	int depth;
+	float wavelength;
 	Ray() {
 		flags = 0;
 		depth = 0;

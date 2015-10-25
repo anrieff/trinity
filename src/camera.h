@@ -89,6 +89,7 @@ public:
 	void rotate(double dx, double dz);
 };
 
+extern bool dispersionOn;
 
 class Lens;
 class SphericalLensCamera: public Camera {

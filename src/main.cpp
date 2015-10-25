@@ -46,6 +46,8 @@ Accum svfb[VFB_MAX_SIZE][VFB_MAX_SIZE];
 Color vfb[VFB_MAX_SIZE][VFB_MAX_SIZE]; //!< virtual framebuffer
 bool testVisibility(const Vector& from, const Vector& to);
 
+const Color DISPERSION_CORRECTION(2.0f, 2.5f, 3.0f);
+
 void resetAccum(void)
 {
 	for (int y = 0; y < frameHeight(); y++)
@@ -260,6 +262,63 @@ static inline Color combineStereo(Color left, Color right)
 	return left * Color(1, 0, 0) + right * Color(0, 1, 1);
 }
 
+Color waveLengthToRGB(double Wavelength){
+    double factor = 0;
+    float Red,Green,Blue;
+
+    if((Wavelength >= 380) && (Wavelength<440)){
+        Red = -(Wavelength - 440) / (440 - 380);
+        Green = 0.0;
+        Blue = 1.0;
+    }else if((Wavelength >= 440) && (Wavelength<490)){
+        Red = 0.0;
+        Green = (Wavelength - 440) / (490 - 440);
+        Blue = 1.0;
+    }else if((Wavelength >= 490) && (Wavelength<510)){
+        Red = 0.0;
+        Green = 1.0;
+        Blue = -(Wavelength - 510) / (510 - 490);
+    }else if((Wavelength >= 510) && (Wavelength<580)){
+        Red = (Wavelength - 510) / (580 - 510);
+        Green = 1.0;
+        Blue = 0.0;
+    }else if((Wavelength >= 580) && (Wavelength<645)){
+        Red = 1.0;
+        Green = -(Wavelength - 645) / (645 - 580);
+        Blue = 0.0;
+    }else if((Wavelength >= 645) && (Wavelength<781)){
+        Red = 1.0;
+        Green = 0.0;
+        Blue = 0.0;
+    }else{
+        Red = 0.0;
+        Green = 0.0;
+        Blue = 0.0;
+    };
+
+    // Let the intensity fall off near the vision limits
+
+    if((Wavelength >= 380) && (Wavelength<420)){
+        factor = 0.3 + 0.7*(Wavelength - 380) / (420 - 380);
+    }else if((Wavelength >= 420) && (Wavelength<701)){
+        factor = 1.0;
+    }else if((Wavelength >= 701) && (Wavelength<781)){
+        factor = 0.3 + 0.7*(780 - Wavelength) / (780 - 700);
+    }else{
+        factor = 0.0;
+    };
+
+	return Color(Red, Green, Blue) * factor;
+}
+
+static inline Color combineDispersion(const Color& input, float wavelength)
+{
+	if (!dispersionOn) return input;
+	else {
+		return input * waveLengthToRGB(wavelength) * DISPERSION_CORRECTION;
+	}
+}
+
 // trace a ray through pixel coords (x, y).
 Color renderSample(double x, double y, int dx = 1, int dy = 1)
 {
@@ -267,9 +326,10 @@ Color renderSample(double x, double y, int dx = 1, int dy = 1)
 		Color average(0, 0, 0);
 		Random& R = getRandomGen();
 		for (int i = 0; i < scene.camera->numSamples; i++) {
-			if (scene.camera->stereoSeparation == 0) // stereoscopic rendering?
-				average += raytrace(scene.camera->getScreenRay(x + R.randdouble() * dx, y + R.randdouble() * dy));
-			else {
+			if (scene.camera->stereoSeparation == 0) { // stereoscopic rendering?
+				Ray ray = scene.camera->getScreenRay(x + R.randdouble() * dx, y + R.randdouble() * dy);
+				average += combineDispersion(raytrace(ray), ray.wavelength);
+			} else {
 				average += combineStereo(
 					raytrace(scene.camera->getScreenRay(x + R.randdouble() * dx, y + R.randdouble() * dy, CAMERA_LEFT)),
 					raytrace(scene.camera->getScreenRay(x + R.randdouble() * dx, y + R.randdouble() * dy, CAMERA_RIGHT))
@@ -552,7 +612,7 @@ void handleKbdMouse(bool& running, double dt)
 					case 'a':
 					case 'b':
 						resetAccum();
-						lensCamera->addAbbe(ev.key.keysym.sym == 'a' ? 0.01 : -0.01);
+						lensCamera->addAbbe(ev.key.keysym.sym == 'a' ? 0.02 : -0.02);
 						break;
 					default:
 						break;
